@@ -395,6 +395,9 @@ function newState() {
     winner: null,
     skillMode: null,
     extraMoveUnit: null,   // Wei 虎豹骑 extra move after attack
+    // AI
+    aiMode: false,
+    aiThinking: false,
     // Handoff
     handoffTitle: '', handoffDesc: '', handoffBtn: '', handoffNext: null,
   };
@@ -923,11 +926,13 @@ function buildScreen() {
 function buildMenu() {
   return '<div class="s-menu fade-in">' +
     '<h1>纸上谈兵</h1>' +
-    '<div class="subtitle">三国 · 单屏双人回合制策略小游戏</div>' +
+    '<div class="subtitle">三国 · 单屏对战策略小游戏</div>' +
     '<div class="feats">⚔ 魏·蜀·吴 三国对决 &nbsp;|&nbsp; 步兵·弓兵·骑兵<br>' +
     '🃏 武将抽卡系统 &nbsp;|&nbsp; 技能释放 &nbsp;|&nbsp; 地形加成</div>' +
-    '<button class="btn" onclick="startGame()">开始游戏</button>' +
-    '</div>';
+    '<div style="display:flex;gap:16px;justify-content:center">' +
+    '<button class="btn" onclick="startGame(false)">双人对战</button>' +
+    '<button class="btn" style="background:linear-gradient(135deg,#2a4a1a,#4a8a2a);border-color:#4a8a2a" onclick="startGame(true)">🤖 人机对战</button>' +
+    '</div></div>';
 }
 
 function buildHandoff() {
@@ -952,8 +957,8 @@ function buildCountry() {
       '</div>';
   }).join('');
   return '<div class="s-country fade-in">' +
-    '<h2>玩家' + (p+1) + '，选择你的国家</h2>' +
-    '<div class="sub">' + (p === 0 ? '玩家2请暂时背对屏幕' : '玩家1已完成选择') + '</div>' +
+    '<h2>' + (S.aiMode ? '你的国家' : '玩家' + (p+1) + '，选择你的国家') + '</h2>' +
+    '<div class="sub">' + (S.aiMode ? '🤖 AI将随机选择国家' : (p === 0 ? '玩家2请暂时背对屏幕' : '玩家1已完成选择')) + '</div>' +
     '<div class="country-cards">' + cards + '</div>' +
     '</div>';
 }
@@ -1171,7 +1176,7 @@ function buildBattle() {
         '<div class="bh-units">存活 ' + alive[0] + ' 支</div>' +
       '</div>' +
       '<div style="text-align:center;flex:1">' +
-        '<div class="bh-turn">⚔ 玩家' + (p+1) + '（' + nat[p].n + '国）的回合</div>' +
+        '<div class="bh-turn">' + (S.aiThinking ? '🤖 AI思考中...' : ('⚔ ' + (S.aiMode && p===1 ? '🤖 AI' : '玩家'+(p+1)) + '（' + nat[p].n + '国）的回合')) + '</div>' +
         '<div style="margin-top:4px">' + cityHpHtml + '</div>' +
       '</div>' +
       '<div class="bh-player" style="text-align:right">' +
@@ -1197,9 +1202,10 @@ function buildBattle() {
 
 function buildGameover() {
   const nat = NATIONS.find(n => n.id === S.nations[S.winner]);
+  const winnerLabel = S.aiMode ? (S.winner === 0 ? '🎉 你赢了' : '🤖 AI获胜') : '玩家' + (S.winner+1);
   return '<div class="s-gameover fade-in">' +
     '<div class="go-h">战斗结束</div>' +
-    '<div class="go-sub" style="color:' + nat.col + '">玩家' + (S.winner+1) + '（' + nat.n + '国）获胜！⚔</div>' +
+    '<div class="go-sub" style="color:' + nat.col + '">' + winnerLabel + '（' + nat.n + '国）⚔</div>' +
     '<button class="btn" onclick="newState();go()">再来一局</button>' +
     '</div>';
 }
@@ -1207,7 +1213,8 @@ function buildGameover() {
 // =============================================
 //  EVENT HANDLERS
 // =============================================
-function startGame() {
+function startGame(aiMode) {
+  S.aiMode = !!aiMode;
   S.pickPlayer = 0;
   S.phase = 'country';
   go();
@@ -1216,11 +1223,17 @@ function startGame() {
 function pickNation(id) {
   S.nations[S.pickPlayer] = id;
   if (S.pickPlayer === 0) {
-    S.handoffTitle = '玩家1选择完毕';
-    S.handoffDesc  = '请将设备交给玩家2，玩家1请背对屏幕。';
-    S.handoffBtn   = '玩家2准备好了 →';
-    S.phase = 'handoff';
-    S.handoffNext  = function() { S.pickPlayer = 1; S.phase = 'country'; };
+    if (S.aiMode) {
+      // AI mode: skip handoff, go straight to player gacha
+      S.gachaP = 0;
+      S.phase  = 'gacha';
+    } else {
+      S.handoffTitle = '玩家1选择完毕';
+      S.handoffDesc  = '请将设备交给玩家2，玩家1请背对屏幕。';
+      S.handoffBtn   = '玩家2准备好了 →';
+      S.phase = 'handoff';
+      S.handoffNext  = function() { S.pickPlayer = 1; S.phase = 'country'; };
+    }
   } else {
     S.gachaP = 0;
     S.phase  = 'gacha';
@@ -1253,11 +1266,17 @@ function doneGacha() {
   const p = S.gachaP;
   S.gachaHand[p] = [...S.gachaDraw[p]];
   if (p === 0) {
-    S.handoffTitle = '玩家1抽将完毕';
-    S.handoffDesc  = '请将设备交给玩家2进行抽将，玩家1请背对屏幕。';
-    S.handoffBtn   = '玩家2准备好了 →';
-    S.phase = 'handoff';
-    S.handoffNext  = function() { S.gachaP = 1; S.phase = 'gacha'; };
+    if (S.aiMode) {
+      // AI mode: skip P2 gacha, go straight to player setup
+      S.setupP = 0; S.buyType = null; S.deployGenIdx = null;
+      S.phase  = 'setup';
+    } else {
+      S.handoffTitle = '玩家1抽将完毕';
+      S.handoffDesc  = '请将设备交给玩家2进行抽将，玩家1请背对屏幕。';
+      S.handoffBtn   = '玩家2准备好了 →';
+      S.phase = 'handoff';
+      S.handoffNext  = function() { S.gachaP = 1; S.phase = 'gacha'; };
+    }
   } else {
     S.setupP       = 0;
     S.buyType      = null;
@@ -1331,14 +1350,21 @@ function doneSetup() {
     return;
   }
   if (p === 0) {
-    S.handoffTitle = '玩家1布置完毕';
-    S.handoffDesc  = '请将设备交给玩家2进行布置，玩家1请背对屏幕。';
-    S.handoffBtn   = '玩家2准备好了 →';
-    S.phase = 'handoff';
-    S.handoffNext  = function() { S.setupP = 1; S.buyType = null; S.deployGenIdx = null; S.phase = 'setup'; };
+    if (S.aiMode) {
+      aiPickNation();
+      aiAutoGacha();
+      aiAutoSetup();
+      S.phase = 'battle'; S.bTurn = 0;
+      addLog('— 战斗开始！（人机模式）—');
+    } else {
+      S.handoffTitle = '玩家1布置完毕';
+      S.handoffDesc  = '请将设备交给玩家2进行布置，玩家1请背对屏幕。';
+      S.handoffBtn   = '玩家2准备好了 →';
+      S.phase = 'handoff';
+      S.handoffNext  = function() { S.setupP = 1; S.buyType = null; S.deployGenIdx = null; S.phase = 'setup'; };
+    }
   } else {
-    S.phase = 'battle';
-    S.bTurn = 0;
+    S.phase = 'battle'; S.bTurn = 0;
     addLog('— 战斗开始！—');
   }
   go();
@@ -1346,6 +1372,8 @@ function doneSetup() {
 
 // ---- BATTLE ----
 function handleBattleClick(r, c) {
+  if (S.aiThinking) return; // block clicks during AI turn
+  if (S.aiMode && S.bTurn === 1) return; // can't control AI units
   const key = r + ',' + c;
   const occ = unitAt(r, c);
 
@@ -1451,7 +1479,6 @@ function endTurn() {
   addLog('— P' + (p+1) + ' 回合结束，双方+50金' + (extra ? '，魏国额外+30金(共80)' : '') + ' —');
   S.extraMoveUnit = null;
 
-  // Apply immobilized to next turn's movedSet/atkSet
   S.bTurn = 1 - S.bTurn;
   clearSel();
   clearSkillMode();
@@ -1473,7 +1500,226 @@ function endTurn() {
     // keep double, triple (they get consumed on attack)
   }
 
+  // Trigger AI if needed
+  if (S.aiMode && S.bTurn === 1 && S.phase === 'battle') {
+    S.aiThinking = true;
+    go();
+    setTimeout(doAiTurn, 700);
+    return;
+  }
   go();
+}
+
+// =============================================
+//  AI
+// =============================================
+function aiPickNation() {
+  const remaining = NATIONS.filter(n => n.id !== S.nations[0]);
+  S.nations[1] = remaining[Math.floor(Math.random() * remaining.length)].id;
+}
+
+function aiAutoGacha() {
+  const natId = S.nations[1];
+  const pool  = GENERALS[natId];
+  for (let i = 0; i < 3; i++) {
+    let rand = Math.random() * 100, result = pool[pool.length - 1];
+    for (let j = 0; j < RARITY_WEIGHTS.length; j++) {
+      rand -= RARITY_WEIGHTS[j];
+      if (rand <= 0) { result = pool[j]; break; }
+    }
+    S.gachaHand[1].push(result);
+  }
+}
+
+function aiAutoSetup() {
+  const aiP = 1;
+  // Gather empty cells in AI zone (cols 8→6, rows 0→6)
+  const cells = [];
+  for (const c of [8, 7, 6]) for (let r = 0; r < ROWS; r++) cells.push({r, c});
+  let ci = 0;
+  function nextCell() { while (ci < cells.length) { const cc = cells[ci++]; if (!unitAt(cc.r, cc.c)) return cc; } return null; }
+
+  // Deploy best general
+  const hand = [...S.gachaHand[1]].sort((a, b) => b.rarity - a.rarity);
+  if (hand.length > 0 && S.gold[aiP] >= 150) {
+    const cell = nextCell();
+    if (cell) { S.units.push(makeGeneral(aiP, hand[0], cell.r, cell.c)); S.gold[aiP] -= 150; }
+  }
+  // Buy units
+  const plan = ['cavalry','archer','cavalry','archer','infantry','infantry','infantry','infantry','infantry','infantry'];
+  for (const type of plan) {
+    const d = UDEFS[type];
+    if (S.gold[aiP] < d.cost) continue;
+    const cnt = S.units.filter(u => u.player === aiP && u.type === type).length;
+    if (cnt >= d.lim) continue;
+    const cell = nextCell();
+    if (!cell) break;
+    S.units.push(makeUnit(aiP, type, cell.r, cell.c));
+    S.gold[aiP] -= d.cost;
+  }
+}
+
+function doAiTurn() {
+  if (S.phase !== 'battle' || S.bTurn !== 1) { S.aiThinking = false; go(); return; }
+  const aiP = 1;
+  aiMaybeBuy();
+  if (S.phase === 'gameover') { S.aiThinking = false; go(); return; }
+
+  // Act each unit (snapshot to avoid mutation issues)
+  const myUnits = S.units.filter(u => u.alive && u.player === aiP);
+  for (const unit of myUnits) {
+    if (!unit.alive || S.phase === 'gameover') break;
+    aiActUnit(unit);
+  }
+  S.aiThinking = false;
+  if (S.phase !== 'gameover') endTurn();
+}
+
+function aiActUnit(unit) {
+  // Use offensive skills before attacking
+  if (unit.isGeneral) aiUseSkill(unit, 'before');
+  // Try attack
+  if (!S.atkSet.has(unit.id)) {
+    const tgt = aiBestTarget(unit, getAtkRange(unit));
+    if (tgt) { aiDoAttack(unit, tgt.r, tgt.c); if (S.phase === 'gameover') return; }
+  }
+  // Handle 虎豹骑 extra move
+  if (S.extraMoveUnit === unit.id) {
+    aiMoveUnit(unit, true);
+    S.extraMoveUnit = null;
+  }
+  // Move
+  if (!S.movedSet.has(unit.id)) aiMoveUnit(unit, false);
+  // Try attack again after moving
+  if (!S.atkSet.has(unit.id)) {
+    const tgt2 = aiBestTarget(unit, getAtkRange(unit));
+    if (tgt2) { aiDoAttack(unit, tgt2.r, tgt2.c); if (S.phase === 'gameover') return; }
+  }
+  // Use utility skills after
+  if (unit.isGeneral) aiUseSkill(unit, 'after');
+}
+
+function aiDoAttack(att, r, c) {
+  const city    = getCityAt(c);
+  const enemyU  = unitAt(r, c);
+  if (enemyU && enemyU.player !== att.player) {
+    const onCity = city && city.owner !== att.player && city.hp > 0;
+    if (onCity && att.type !== 'archer' && !att.isGeneral) doAttackCity(att, city);
+    else doAttack(att, enemyU);
+  } else if (city && city.owner !== att.player && city.hp > 0) {
+    doAttackCity(att, city);
+  }
+  checkWin();
+}
+
+function aiBestTarget(unit, atkRange) {
+  let best = null, bestScore = -Infinity;
+  for (const key of atkRange) {
+    const [r, c] = key.split(',').map(Number);
+    const occ  = unitAt(r, c);
+    const city = getCityAt(c);
+    let score = 0;
+    if (occ && occ.player !== unit.player) {
+      score = 50 + (occ.maxHp - occ.hp);      // prefer weak units
+      if (occ.isGeneral) score += 40;           // generals are high value
+      if (occ.hp <= calcDamage(unit, occ)) score += 80; // killing blow!
+      if (occ.col <= 2) score += 15;            // threatening units near our city
+    } else if (city && city.owner !== unit.player && city.hp > 0) {
+      score = 20 + (city.maxHp - city.hp) * 0.3;
+      if (city.hp <= Math.max(1, Math.floor(getEffectiveAtk(unit) - city.def * 0.5))) score += 60;
+    }
+    if (score > bestScore) { bestScore = score; best = { r, c }; }
+  }
+  return best;
+}
+
+function aiMoveUnit(unit, extraOnly) {
+  const mv   = getMoveRange(unit);
+  if (!mv.size) return;
+  // Score each reachable cell: prefer cells from which we can attack enemies
+  let bestCell = null, bestScore = -Infinity;
+  const enemies = S.units.filter(u => u.alive && u.player !== unit.player);
+  const enemyCity = S.cities.find(c => c.owner !== unit.player);
+  for (const key of mv) {
+    const [r, c] = key.split(',').map(Number);
+    let score = 0;
+    // Can we attack from here?
+    const tempUnit = Object.assign({}, unit, { row: r, col: c });
+    for (const e of enemies) {
+      const d = Math.abs(r - e.row) + Math.abs(c - e.col);
+      if (d >= unit.r1 && d <= unit.r2) score += 30;
+      else score -= d;
+    }
+    // Bonus: moving toward enemy city
+    const cityDist = Math.abs(c - enemyCity.col);
+    score -= cityDist * 2;
+    // Avoid walking into mountain for non-cavalry
+    const t = TERRAIN[TMAP[r][c]];
+    if (t.noCav && unit.type === 'cavalry') continue;
+    if (score > bestScore) { bestScore = score; bestCell = { r, c }; }
+  }
+  if (bestCell) {
+    unit.row = bestCell.r; unit.col = bestCell.c;
+    S.movedSet.add(unit.id);
+  }
+}
+
+function aiUseSkill(unit, when) {
+  if (!unit.isGeneral || !unit.genDef) return;
+  const activeSk = unit.genDef.skills.filter(s => s.type === 'active' && getSkillUses(unit, s) < s.uses);
+  for (const sk of activeSk) {
+    // Skip target-selection skills (flank, trap, piercewall)
+    if (['flank','trap','piercewall'].includes(sk.id)) continue;
+    if (when === 'before' && ['fierceatk','seafight','pierce','surge','boost','slayer'].includes(sk.id)) {
+      activateSkill(unit.id, sk.id); return;
+    }
+    if (when === 'after') {
+      if (sk.id === 'burn' || sk.id === 'firestrike') {
+        const rowEn = S.units.filter(u => u.alive && u.player !== unit.player && u.row === unit.row);
+        if (rowEn.length >= 2) { activateSkill(unit.id, sk.id); return; }
+      }
+      if (sk.id === 'colstrike') {
+        const colEn = S.units.filter(u => u.alive && u.player !== unit.player && u.col === unit.col);
+        if (colEn.length >= 2) { activateSkill(unit.id, sk.id); return; }
+      }
+      if (sk.id === 'weaken') {
+        const en = S.units.filter(u => u.alive && u.player !== unit.player);
+        if (en.length >= 2) { activateSkill(unit.id, sk.id); return; }
+      }
+      if (sk.id === 'edict') {
+        const done = S.units.filter(u => u.alive && u.player === unit.player && S.movedSet.has(u.id) && S.atkSet.has(u.id)).length;
+        if (done >= 2) { activateSkill(unit.id, sk.id); return; }
+      }
+      if (sk.id === 'phantom') { activateSkill(unit.id, sk.id); return; }
+      if (sk.id === 'guard') { activateSkill(unit.id, sk.id); return; }
+    }
+  }
+}
+
+function aiMaybeBuy() {
+  const aiP     = 1;
+  const backCol = S.cities.find(c => c.owner === aiP).col;
+  if (S.gold[aiP] < 50) return;
+  const myAlive = S.units.filter(u => u.alive && u.player === aiP).length;
+  if (myAlive > 6) return; // don't over-buy
+  const order = ['cavalry','archer','infantry'];
+  for (const type of order) {
+    const d   = UDEFS[type];
+    if (S.gold[aiP] < d.cost) continue;
+    const cnt = S.units.filter(u => u.player === aiP && u.type === type && u.alive).length;
+    if (cnt >= d.lim) continue;
+    for (let r = 0; r < ROWS; r++) {
+      if (!unitAt(r, backCol)) {
+        S.gold[aiP] -= d.cost;
+        const u = makeUnit(aiP, type, r, backCol);
+        u.hasMoved = true; u.hasAttacked = true;
+        S.units.push(u);
+        S.movedSet.add(u.id); S.atkSet.add(u.id);
+        addLog('[AI] 购入' + d.n);
+        return;
+      }
+    }
+  }
 }
 
 // =============================================
