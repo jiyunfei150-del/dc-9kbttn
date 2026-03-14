@@ -175,6 +175,26 @@ body {
 .t-legend-item { display: flex; align-items: center; gap: 4px; }
 .t-swatch { width: 12px; height: 12px; border-radius: 2px; }
 
+/* CITY CELL */
+.city-cell::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(200, 150, 30, 0.18);
+  border: 1px solid rgba(212, 160, 48, 0.40);
+  border-radius: 3px; pointer-events: none; z-index: 1;
+}
+.city-hp-bar { position: absolute; top: 2px; left: 3px; right: 3px; height: 4px; background: #333; border-radius: 2px; z-index: 3; pointer-events: none; }
+.city-hp-fill { height: 100%; background: #d4a030; border-radius: 2px; }
+
+/* BUY REINFORCE */
+.buy-reinforce { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.buy-btn {
+  padding: 3px 9px; font-size: 11px; border-radius: 4px;
+  border: 1px solid #4a3820; background: #1e1408;
+  color: #c8a060; cursor: pointer; font-family: inherit;
+}
+.buy-btn:hover:not(.disabled) { background: #2a1e10; border-color: #d4a030; }
+.buy-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
 /* BATTLE */
 .s-battle { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1120px; padding: 10px; gap: 8px; }
 .battle-hdr {
@@ -328,6 +348,11 @@ function newState() {
     setupP: 0,
     buyType: null,
     deployGenIdx: null,
+    // Cities (last column of each player's zone)
+    cities: [
+      { owner: 0, col: 0, hp: 100, maxHp: 100, def: 10 },
+      { owner: 1, col: 9, hp: 100, maxHp: 100, def: 10 },
+    ],
     // Battle
     bTurn: 0,
     selected: null,
@@ -345,6 +370,10 @@ function newState() {
     handoffTitle: '', handoffDesc: '', handoffBtn: '', handoffNext: null,
   };
 }
+
+// City helpers
+function getCityAt(col) { return S.cities.find(c => c.col === col) || null; }
+function isCityCol(col) { return col === 0 || col === 9; }
 
 function addLog(msg) {
   S.log.unshift(msg);
@@ -399,8 +428,11 @@ function getEffectiveAtk(unit) {
 function getEffectiveDef(unit) {
   const buffs = S.unitBuffs[unit.id] || {};
   let d = unit.def + (buffs.defBonus || 0);
-  if (hasAllyPassive(unit.player, 'scholar'))                     d += 2;
+  if (hasAllyPassive(unit.player, 'scholar'))                      d += 2;
   if (hasPassive(unit, 'stubborn') && unit.hp < unit.maxHp * 0.5) d = Math.floor(d * 2);
+  // City defense bonus: unit standing on own city column
+  const city = getCityAt(unit.col);
+  if (city && city.owner === unit.player && city.hp > 0)           d += 4;
   return d;
 }
 
@@ -445,9 +477,15 @@ function getAtkRange(unit) {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const d   = Math.abs(r - unit.row) + Math.abs(c - unit.col);
-      const occ = unitAt(r, c);
-      if (d >= unit.r1 && d <= unit.r2 && occ && occ.player !== unit.player) {
+      if (d < unit.r1 || d > unit.r2) continue;
+      const occ  = unitAt(r, c);
+      const city = getCityAt(c);
+      if (occ && occ.player !== unit.player) {
+        // Enemy unit on this cell (city or normal)
         if (!(S.unitBuffs[occ.id] || {}).immune) targets.add(r + ',' + c);
+      } else if (!occ && city && city.owner !== unit.player && city.hp > 0) {
+        // Empty enemy city cell — can attack the city structure
+        targets.add(r + ',' + c);
       }
     }
   }
@@ -522,11 +560,44 @@ function onDeath(unit, killer) {
 }
 
 function checkWin() {
+  // City destroyed
+  if (S.cities[0].hp <= 0) { S.winner = 1; S.phase = 'gameover'; return true; }
+  if (S.cities[1].hp <= 0) { S.winner = 0; S.phase = 'gameover'; return true; }
+  // All units eliminated
   const a0 = S.units.filter(u => u.alive && u.player === 0).length;
   const a1 = S.units.filter(u => u.alive && u.player === 1).length;
   if (a0 === 0) { S.winner = 1; S.phase = 'gameover'; return true; }
   if (a1 === 0) { S.winner = 0; S.phase = 'gameover'; return true; }
   return false;
+}
+
+// Attack the city structure (not a unit)
+function doAttackCity(att, city) {
+  const eff = getEffectiveAtk(att);
+  const dmg = Math.max(1, Math.floor(eff - city.def * 0.5));
+  city.hp   = Math.max(0, city.hp - dmg);
+  addLog('P' + (att.player+1) + ' ' + (att.name || UDEFS[att.type].n) + ' → 城池 −' + dmg + ' (剩余' + city.hp + ')');
+  S.atkSet.add(att.id);
+}
+
+// Buy a reinforcement unit and spawn it in own city column
+function buyReinforcement(type) {
+  const p   = S.bTurn;
+  const d   = UDEFS[type];
+  if (S.gold[p] < d.cost) { addLog('金币不足'); go(); return; }
+  const backCol = S.cities.find(c => c.owner === p).col;
+  for (let r = 0; r < ROWS; r++) {
+    if (!unitAt(r, backCol)) {
+      S.gold[p] -= d.cost;
+      const u = makeUnit(p, type, r, backCol);
+      u.hasMoved = true; u.hasAttacked = true;
+      S.units.push(u);
+      S.movedSet.add(u.id); S.atkSet.add(u.id);
+      addLog('购入' + d.n + '，部署于后排(' + r + ',' + backCol + ')');
+      go(); return;
+    }
+  }
+  addLog('后排已满，无法增援'); go();
 }
 
 // =============================================
@@ -716,17 +787,32 @@ function renderMap(setupMode) {
   let html = '<div id="map">';
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const key = r + ',' + c;
-      const t   = TERRAIN[TMAP[r][c]];
-      const occ = unitAt(r, c);
+      const key  = r + ',' + c;
+      const t    = TERRAIN[TMAP[r][c]];
+      const occ  = unitAt(r, c);
+      const city = getCityAt(c);
       let cls = 'cell';
+      if (city) cls += ' city-cell';
       if (setupMode) {
         if (c <= 2) cls += ' zone-0';
         else if (c >= 7) cls += ' zone-1';
       }
       if (S.hlMv.has(key))  cls += ' hl-move';
       if (S.hlAtk.has(key)) cls += ' hl-atk';
-      const inner = occ ? renderUnitToken(occ) : '<span class="terrain-lbl">' + t.name + '</span>';
+
+      let inner = '';
+      if (occ) {
+        inner = renderUnitToken(occ);
+      } else if (city && city.hp > 0) {
+        // Show city HP bar and castle icon on empty city cells
+        const pct = city.hp / city.maxHp * 100;
+        inner = '<div class="city-hp-bar"><div class="city-hp-fill" style="width:' + pct + '%"></div></div>' +
+                '<span style="font-size:22px;z-index:2;position:relative">🏯</span>' +
+                '<span style="position:absolute;bottom:6px;font-size:9px;color:#d4a030;z-index:2">' + city.hp + '</span>';
+      } else {
+        inner = '<span class="terrain-lbl">' + t.name + '</span>';
+      }
+
       html += '<div class="' + cls + '" style="background:' + t.bg + '"' +
               ' data-r="' + r + '" data-c="' + c + '"' +
               ' onclick="cellClick(' + r + ',' + c + ')">' + inner + '</div>';
@@ -938,6 +1024,28 @@ function buildBattle() {
 
   const logHtml = S.log.slice(0, 12).join('<br>');
 
+  // Buy reinforcement buttons (current player only)
+  const buyBtnsHtml = '<div class="buy-reinforce">' +
+    '<span style="font-size:11px;color:#7a6040">增援：</span>' +
+    Object.keys(UDEFS).map(type => {
+      const d   = UDEFS[type];
+      const can = S.gold[p] >= d.cost;
+      return '<button class="buy-btn' + (can ? '' : ' disabled') + '"' +
+        (can ? ' onclick="buyReinforcement(\'' + type + '\')"' : '') + '>' +
+        d.e + d.n + ' ' + d.cost + '金</button>';
+    }).join('') +
+    '</div>';
+
+  // City HP display
+  const cityHpHtml = S.cities.map(city => {
+    const nat2 = NATIONS.find(n => n.id === S.nations[city.owner]);
+    const pct  = city.hp / city.maxHp * 100;
+    const barC = pct > 50 ? '#d4a030' : pct > 25 ? '#cc7700' : '#cc2200';
+    return '<span style="font-size:11px;color:' + nat2.col + '">🏯P' + (city.owner+1) + ':' + city.hp + '</span>' +
+      '<span style="display:inline-block;width:50px;height:5px;background:#333;border-radius:2px;margin:0 6px 0 2px;vertical-align:middle">' +
+      '<span style="display:block;height:100%;background:' + barC + ';border-radius:2px;width:' + pct + '%"></span></span>';
+  }).join('');
+
   return '<div class="s-battle fade-in">' +
     '<div class="battle-hdr">' +
       '<div class="bh-player">' +
@@ -945,7 +1053,10 @@ function buildBattle() {
         '<div class="bh-gold">💰 ' + S.gold[0] + '</div>' +
         '<div class="bh-units">存活 ' + alive[0] + ' 支</div>' +
       '</div>' +
-      '<div class="bh-turn">⚔ 玩家' + (p+1) + '（' + nat[p].n + '国）的回合</div>' +
+      '<div style="text-align:center;flex:1">' +
+        '<div class="bh-turn">⚔ 玩家' + (p+1) + '（' + nat[p].n + '国）的回合</div>' +
+        '<div style="margin-top:4px">' + cityHpHtml + '</div>' +
+      '</div>' +
       '<div class="bh-player" style="text-align:right">' +
         '<div class="bh-pname" style="color:' + nat[1].col + '">玩家2 · ' + nat[1].n + '国</div>' +
         '<div class="bh-gold">💰 ' + S.gold[1] + '</div>' +
@@ -955,7 +1066,11 @@ function buildBattle() {
     renderMap(false) +
     terrainLegend() +
     '<div class="battle-btm">' +
-      '<div class="unit-info">' + infoTxt + (skillBtnsHtml ? '<br>' + skillBtnsHtml : '') + '</div>' +
+      '<div class="unit-info">' +
+        infoTxt +
+        (skillBtnsHtml ? '<br>' + skillBtnsHtml : '') +
+        '<br>' + buyBtnsHtml +
+      '</div>' +
       '<div class="battle-log">' + logHtml + '</div>' +
       '<button class="btn" onclick="endTurn()">结束回合</button>' +
     '</div>' +
@@ -1126,8 +1241,26 @@ function handleBattleClick(r, c) {
     }
 
     // Flank skill or normal attack
-    if (S.hlAtk.has(key) && occ && occ.player !== unit.player) {
-      doAttack(unit, occ);
+    if (S.hlAtk.has(key)) {
+      const targetCity = getCityAt(c);
+      const enemyUnit  = occ && occ.player !== unit.player ? occ : null;
+
+      if (enemyUnit) {
+        // There is an enemy unit on this cell
+        const onCity = targetCity && targetCity.owner !== unit.player && targetCity.hp > 0;
+        if (onCity && unit.type !== 'archer' && !unit.isGeneral) {
+          // Infantry/cavalry can't directly attack units sheltered in city — hit the city instead
+          doAttackCity(unit, targetCity);
+          addLog('（步兵/骑兵无法直接攻击城内单位，转为攻击城池）');
+        } else {
+          // Archers and generals can attack the unit directly
+          doAttack(unit, enemyUnit);
+        }
+      } else if (targetCity && targetCity.owner !== unit.player && targetCity.hp > 0) {
+        // Empty enemy city cell — attack the city structure
+        doAttackCity(unit, targetCity);
+      }
+
       clearSkillMode();
       if (!checkWin()) clearSel();
       go();
