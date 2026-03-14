@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>三国争霸 - 双人回合制</title>
+<title>纸上谈兵(三国)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -15,8 +15,6 @@ body {
   justify-content: center;
   overflow-x: hidden;
 }
-
-/* ====== COMMON BUTTON ====== */
 .btn {
   background: linear-gradient(135deg, #7a5e12, #c49830);
   border: 1px solid #c49830;
@@ -34,317 +32,189 @@ body {
 .btn:active { transform: translateY(0); }
 .btn.sm { padding: 7px 16px; font-size: 12px; }
 
-/* ====== MENU ====== */
-.s-menu {
-  text-align: center;
-  padding: 80px 40px;
-}
+/* MENU */
+.s-menu { text-align: center; padding: 80px 40px; }
 .s-menu h1 {
-  font-size: 64px;
-  color: #d4a030;
+  font-size: 60px; color: #d4a030;
   text-shadow: 0 0 40px rgba(212,160,48,0.7), 0 0 80px rgba(212,160,48,0.3);
-  margin-bottom: 12px;
-  letter-spacing: 14px;
+  margin-bottom: 10px; letter-spacing: 12px;
 }
-.s-menu .subtitle {
-  color: #7a6040;
-  font-size: 15px;
-  margin-bottom: 14px;
-  letter-spacing: 3px;
-}
-.s-menu .feats {
-  color: #5a4a2a;
-  font-size: 13px;
-  margin-bottom: 50px;
-  line-height: 2;
-}
+.s-menu .subtitle { color: #7a6040; font-size: 14px; margin-bottom: 12px; letter-spacing: 3px; }
+.s-menu .feats { color: #5a4a2a; font-size: 13px; margin-bottom: 50px; line-height: 2; }
 
-/* ====== HANDOFF ====== */
-.s-handoff {
-  text-align: center;
-  padding: 80px 40px;
-  max-width: 500px;
-}
+/* HANDOFF */
+.s-handoff { text-align: center; padding: 80px 40px; max-width: 500px; }
 .s-handoff .hf-icon { font-size: 60px; margin-bottom: 20px; }
 .s-handoff h2 { color: #d4a030; font-size: 26px; margin-bottom: 10px; }
 .s-handoff p { color: #7a6040; font-size: 14px; margin-bottom: 40px; line-height: 1.8; }
 
-/* ====== COUNTRY SELECT ====== */
-.s-country {
-  text-align: center;
-  padding: 40px 20px;
-}
+/* COUNTRY */
+.s-country { text-align: center; padding: 40px 20px; }
 .s-country h2 { color: #d4a030; font-size: 28px; margin-bottom: 6px; }
 .s-country .sub { color: #6a5030; font-size: 13px; margin-bottom: 30px; }
 .country-cards { display: flex; gap: 18px; justify-content: center; }
 .c-card {
-  width: 188px;
-  border: 2px solid #3a3020;
-  border-radius: 12px;
-  padding: 22px 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: #18140a;
-  text-align: center;
+  width: 188px; border: 2px solid #3a3020; border-radius: 12px;
+  padding: 22px 14px; cursor: pointer; transition: all 0.2s;
+  background: #18140a; text-align: center;
 }
-.c-card:hover:not(.taken) {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.6);
-}
+.c-card:hover:not(.taken) { transform: translateY(-5px); box-shadow: 0 10px 24px rgba(0,0,0,0.6); }
 .c-card.taken { opacity: 0.3; cursor: not-allowed; }
 .c-card .cc-name { font-size: 32px; font-weight: bold; margin-bottom: 12px; }
 .c-card .cc-bonus { font-size: 12px; color: #9a8060; line-height: 1.8; }
-.c-card .cc-taken { font-size: 11px; color: #5a4a2a; margin-top: 10px; }
 
-/* ====== SETUP ====== */
-.s-setup {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px;
-  width: 100%;
-  max-width: 1120px;
+/* GACHA */
+.s-gacha { text-align: center; padding: 40px 20px; }
+.s-gacha h2 { font-size: 28px; margin-bottom: 4px; }
+.s-gacha .g-sub { color: #6a5030; font-size: 13px; margin-bottom: 28px; }
+.gacha-cards { display: flex; gap: 22px; justify-content: center; margin-bottom: 30px; }
+.gacha-card {
+  width: 168px; min-height: 230px; border-radius: 12px;
+  border: 2px solid #3a3020; background: #14100a;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 14px 10px; text-align: center;
 }
-.side-panel {
-  width: 158px;
-  flex-shrink: 0;
-  background: #18140a;
-  border: 1px solid #3a3020;
-  border-radius: 8px;
-  padding: 12px;
+.gacha-card.face-down { cursor: pointer; }
+.gacha-card.face-down:hover { border-color: #d4a030; transform: translateY(-4px); transition: all 0.2s; }
+.gacha-card.revealed { animation: flipReveal 0.4s ease-out; }
+@keyframes flipReveal {
+  0%   { transform: rotateY(90deg) scale(0.85); opacity: 0; }
+  100% { transform: rotateY(0deg)  scale(1);    opacity: 1; }
 }
-.panel-h {
-  font-size: 13px;
-  font-weight: bold;
-  color: #d4a030;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #3a3020;
-}
+.gc-question { font-size: 64px; color: #2a2018; }
+.gc-hint     { font-size: 12px; color: #5a4a2a; margin-top: 10px; }
+.gc-rarity   { font-size: 16px; margin-bottom: 8px; letter-spacing: 1px; }
+.gc-name     { font-size: 20px; font-weight: bold; color: #f0e6cc; margin-bottom: 6px; }
+.gc-stats    { font-size: 11px; color: #8a7a5a; margin-bottom: 8px; line-height: 1.9; }
+.gc-skills   { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.skill-tag   { font-size: 10px; background: #2a1e08; border: 1px solid #5a4020; border-radius: 3px; padding: 2px 5px; color: #c8a060; }
+.skill-tag.passive { border-color: #3a5020; color: #80c060; }
+
+/* SETUP */
+.s-setup { display: flex; gap: 12px; align-items: flex-start; padding: 12px; width: 100%; max-width: 1120px; }
+.side-panel { width: 162px; flex-shrink: 0; background: #18140a; border: 1px solid #3a3020; border-radius: 8px; padding: 12px; }
+.panel-h { font-size: 13px; font-weight: bold; color: #d4a030; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #3a3020; }
 .gold-num { font-size: 24px; color: #f0c030; margin: 6px 0; }
 .bonus-txt { font-size: 11px; color: #7a6040; margin-bottom: 12px; }
 .utype-btn {
-  display: block;
-  width: 100%;
-  margin-bottom: 7px;
-  padding: 8px 10px;
-  background: #22180a;
-  border: 1px solid #4a3820;
-  color: #e0d0b0;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 11px;
-  font-family: inherit;
-  text-align: left;
-  transition: border-color 0.15s;
-  line-height: 1.6;
+  display: block; width: 100%; margin-bottom: 7px;
+  padding: 8px 10px; background: #22180a; border: 1px solid #4a3820;
+  color: #e0d0b0; border-radius: 5px; cursor: pointer;
+  font-size: 11px; font-family: inherit; text-align: left;
+  transition: border-color 0.15s; line-height: 1.6;
 }
 .utype-btn:hover:not(.disabled) { border-color: #d4a030; }
 .utype-btn.active { border-color: #d4a030; background: #2e2010; box-shadow: 0 0 8px rgba(212,160,48,0.25); }
 .utype-btn.disabled { opacity: 0.38; cursor: not-allowed; }
+.utype-btn.general-btn { border-color: #5a4010; }
+.utype-btn.general-btn.active { border-color: #ffd700; }
 .utype-cost { color: #d4a030; }
 .utype-count { float: right; color: #6a5a3a; }
 .setup-main { flex: 1; text-align: center; }
 .setup-title { font-size: 16px; color: #d4a030; font-weight: bold; margin-bottom: 4px; }
-.setup-hint {
-  font-size: 12px; color: #6a5a3a;
-  margin-bottom: 8px;
-  min-height: 18px;
-}
+.setup-hint { font-size: 12px; color: #6a5a3a; margin-bottom: 8px; min-height: 18px; }
 
-/* ====== MAP ====== */
+/* MAP */
 #map {
   display: inline-grid;
   grid-template-columns: repeat(10, 68px);
   grid-template-rows: repeat(6, 68px);
-  gap: 2px;
-  background: #0a0806;
-  padding: 4px;
-  border: 1px solid #3a3020;
-  border-radius: 4px;
+  gap: 2px; background: #0a0806; padding: 4px;
+  border: 1px solid #3a3020; border-radius: 4px;
 }
 .cell {
-  width: 68px;
-  height: 68px;
-  border-radius: 3px;
-  position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: filter 0.1s;
-  overflow: hidden;
+  width: 68px; height: 68px; border-radius: 3px; position: relative;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: filter 0.1s; overflow: hidden;
 }
 .cell:hover { filter: brightness(1.28); }
-
-/* Move highlight */
 .cell.hl-move::after {
-  content: '';
-  position: absolute; inset: 0;
-  border: 3px solid #44aaff;
-  box-shadow: inset 0 0 14px rgba(64,170,255,0.4);
-  border-radius: 3px;
-  pointer-events: none;
-  z-index: 5;
+  content: ''; position: absolute; inset: 0;
+  border: 3px solid #44aaff; box-shadow: inset 0 0 14px rgba(64,170,255,0.4);
+  border-radius: 3px; pointer-events: none; z-index: 5;
 }
-/* Attack highlight */
 .cell.hl-atk::after {
-  content: '';
-  position: absolute; inset: 0;
-  border: 3px solid #ff4444;
-  box-shadow: inset 0 0 14px rgba(255,64,64,0.4);
-  border-radius: 3px;
-  pointer-events: none;
-  z-index: 5;
+  content: ''; position: absolute; inset: 0;
+  border: 3px solid #ff4444; box-shadow: inset 0 0 14px rgba(255,64,64,0.4);
+  border-radius: 3px; pointer-events: none; z-index: 5;
 }
-/* Setup zone tint */
 .cell.zone-0::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(60,110,220,0.10);
-  border: 1px solid rgba(60,110,220,0.18);
-  border-radius: 3px;
-  pointer-events: none;
+  content: ''; position: absolute; inset: 0;
+  background: rgba(60,110,220,0.10); border: 1px solid rgba(60,110,220,0.18);
+  border-radius: 3px; pointer-events: none;
 }
 .cell.zone-1::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(220,60,60,0.10);
-  border: 1px solid rgba(220,60,60,0.18);
-  border-radius: 3px;
-  pointer-events: none;
+  content: ''; position: absolute; inset: 0;
+  background: rgba(220,60,60,0.10); border: 1px solid rgba(220,60,60,0.18);
+  border-radius: 3px; pointer-events: none;
 }
-.terrain-lbl {
-  position: absolute;
-  bottom: 2px; left: 3px;
-  font-size: 8px;
-  color: rgba(255,255,255,0.3);
-  pointer-events: none;
-}
+.terrain-lbl { position: absolute; bottom: 2px; left: 3px; font-size: 8px; color: rgba(255,255,255,0.3); pointer-events: none; }
 
-/* ====== UNIT TOKEN ====== */
+/* UNIT TOKEN */
 .u-tok {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid transparent;
-  position: relative;
-  z-index: 2;
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 2px solid transparent; position: relative; z-index: 2;
   transition: box-shadow 0.15s;
 }
 .u-tok.p0 { background: rgba(28,56,140,0.92); border-color: #4488ee; }
 .u-tok.p1 { background: rgba(140,28,28,0.92); border-color: #ee4444; }
+.u-tok.gen { border-color: #d4a030 !important; border-width: 2px; }
 .u-tok.selected { border-color: #ffd700 !important; box-shadow: 0 0 16px rgba(255,215,0,0.9) !important; }
-.u-tok.done { opacity: 0.52; }
-.u-icon { font-size: 20px; line-height: 1; }
-.u-hp { font-size: 9px; color: #ccc; line-height: 1.2; }
-.u-bar {
-  position: absolute;
-  bottom: 3px; left: 5px; right: 5px;
-  height: 3px;
-  background: #333;
-  border-radius: 2px;
-}
-.u-bar-fill {
-  height: 100%;
-  background: #22ee22;
-  border-radius: 2px;
-  transition: width 0.3s;
-}
+.u-tok.done { opacity: 0.50; }
+.u-icon  { font-size: 20px; line-height: 1; }
+.u-gname { font-size: 9px; color: #ffd700; line-height: 1.1; font-weight: bold; }
+.u-hp    { font-size: 9px; color: #ccc; line-height: 1.2; }
+.u-bar   { position: absolute; bottom: 3px; left: 5px; right: 5px; height: 3px; background: #333; border-radius: 2px; }
+.u-bar-fill { height: 100%; background: #22ee22; border-radius: 2px; transition: width 0.3s; }
 .u-bar-fill.med { background: #eeaa00; }
 .u-bar-fill.low { background: #ee2222; }
 
-/* ====== TERRAIN LEGEND ====== */
-.t-legend {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  margin-top: 6px;
-  font-size: 11px;
-  color: #6a5a3a;
-}
+/* TERRAIN LEGEND */
+.t-legend { display: flex; gap: 14px; justify-content: center; margin-top: 6px; font-size: 11px; color: #6a5a3a; }
 .t-legend-item { display: flex; align-items: center; gap: 4px; }
 .t-swatch { width: 12px; height: 12px; border-radius: 2px; }
 
-/* ====== BATTLE ====== */
-.s-battle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 1120px;
-  padding: 10px;
-  gap: 8px;
-}
+/* BATTLE */
+.s-battle { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1120px; padding: 10px; gap: 8px; }
 .battle-hdr {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  background: #18140a;
-  border: 1px solid #3a3020;
-  border-radius: 8px;
-  padding: 10px 20px;
+  display: flex; width: 100%; align-items: center; justify-content: space-between;
+  background: #18140a; border: 1px solid #3a3020; border-radius: 8px; padding: 10px 20px;
 }
-.bh-player { min-width: 140px; }
-.bh-pname { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-.bh-gold { font-size: 20px; color: #f0c030; }
-.bh-units { font-size: 11px; color: #6a5a3a; }
-.bh-turn {
-  font-size: 18px;
-  color: #d4a030;
-  font-weight: bold;
-  text-align: center;
-  flex: 1;
-}
-.battle-btm {
-  display: flex;
-  width: 100%;
-  gap: 8px;
-  align-items: stretch;
-}
+.bh-player { min-width: 160px; }
+.bh-pname  { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+.bh-gold   { font-size: 20px; color: #f0c030; }
+.bh-units  { font-size: 11px; color: #6a5a3a; }
+.bh-turn   { font-size: 18px; color: #d4a030; font-weight: bold; text-align: center; flex: 1; }
+.battle-btm { display: flex; width: 100%; gap: 8px; align-items: stretch; }
 .unit-info {
-  flex: 1;
-  background: #18140a;
-  border: 1px solid #3a3020;
-  border-radius: 6px;
-  padding: 10px 16px;
-  font-size: 13px;
-  color: #b0a080;
-  display: flex;
-  align-items: center;
-  min-height: 52px;
+  flex: 1; background: #18140a; border: 1px solid #3a3020; border-radius: 6px;
+  padding: 8px 14px; font-size: 12px; color: #b0a080;
+  display: flex; flex-direction: column; justify-content: center; min-height: 62px; gap: 5px;
 }
 .battle-log {
-  width: 200px;
-  background: #0c0a06;
-  border: 1px solid #3a3020;
-  border-radius: 6px;
-  padding: 8px;
-  overflow-y: auto;
-  max-height: 80px;
-  font-size: 10px;
-  color: #7a6040;
-  line-height: 1.7;
+  width: 200px; background: #0c0a06; border: 1px solid #3a3020;
+  border-radius: 6px; padding: 8px; overflow-y: auto; max-height: 80px;
+  font-size: 10px; color: #7a6040; line-height: 1.7;
 }
+/* SKILL BUTTONS */
+.skill-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.skill-btn {
+  padding: 3px 10px; font-size: 11px; border-radius: 4px;
+  border: 1px solid #5a4020; background: #2a1a08;
+  color: #d4a030; cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.skill-btn:hover:not(.used) { background: #3a2810; border-color: #d4a030; }
+.skill-btn.used { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+.skill-btn.targeting { border-color: #44aaff; color: #44aaff; animation: pulse 0.7s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
 
-/* ====== GAMEOVER ====== */
-.s-gameover {
-  text-align: center;
-  padding: 80px 40px;
-}
-.go-h { font-size: 48px; color: #d4a030; margin-bottom: 16px; letter-spacing: 4px; }
+/* GAMEOVER */
+.s-gameover { text-align: center; padding: 80px 40px; }
+.go-h   { font-size: 48px; color: #d4a030; margin-bottom: 16px; letter-spacing: 4px; }
 .go-sub { font-size: 22px; margin-bottom: 40px; }
 
-/* ====== ANIMATION ====== */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 .fade-in { animation: fadeUp 0.3s ease-out; }
 </style>
 </head>
@@ -352,12 +222,13 @@ body {
 <div id="screen"></div>
 
 <script>
+'use strict';
+
 // =============================================
-//  DATA
+//  CONSTANTS & DATA
 // =============================================
 const ROWS = 6, COLS = 10;
 
-// 0=平原  1=树林  2=山地
 const TMAP = [
   [0,0,0,0,0,0,0,0,0,0],
   [0,0,1,1,2,2,1,1,0,0],
@@ -373,16 +244,67 @@ const TERRAIN = [
 ];
 
 const UDEFS = {
-  infantry: { n:'步兵', e:'⚔',  a:3, d:6, h:12, mv:1, r1:1, r2:1, cost:50,  lim:6 },
-  archer:   { n:'弓兵', e:'🏹', a:7, d:3, h:8,  mv:1, r1:1, r2:3, cost:80,  lim:4 },
-  cavalry:  { n:'骑兵', e:'🐎', a:8, d:4, h:10, mv:2, r1:1, r2:1, cost:150, lim:3 },
+  infantry: { n:'步兵', e:'⚔',  a:3,  d:6, h:12, mv:1, r1:1, r2:1, cost:50,  lim:6 },
+  archer:   { n:'弓兵', e:'🏹', a:7,  d:3, h:8,  mv:1, r1:1, r2:3, cost:80,  lim:4 },
+  cavalry:  { n:'骑兵', e:'🐎', a:8,  d:4, h:10, mv:2, r1:1, r2:1, cost:150, lim:3 },
 };
 
 const NATIONS = [
-  { id:'wei', n:'魏', icon:'⚔',  col:'#5588cc', bonus:'gold',     bdesc:'每回合收入 +10%',  detail:'财力雄厚，金源丰盈' },
-  { id:'shu', n:'蜀', icon:'🌿', col:'#44aa44', bonus:'infantry', bdesc:'步兵 +1攻 +1防',   detail:'蜀国步卒，坚不可摧' },
-  { id:'wu',  n:'吴', icon:'🌊', col:'#cc4444', bonus:'cavalry',  bdesc:'骑兵移动力 +1',    detail:'铁骑神速，纵横疆场' },
+  { id:'wei', n:'魏', icon:'⚔',  col:'#5588cc', bonus:'gold',     bdesc:'每回合收入+10%',  detail:'财力雄厚，金源丰盈' },
+  { id:'shu', n:'蜀', icon:'🌿', col:'#44aa44', bonus:'infantry', bdesc:'步兵+1攻+1防',   detail:'蜀国步卒，坚不可摧' },
+  { id:'wu',  n:'吴', icon:'🌊', col:'#cc4444', bonus:'cavalry',  bdesc:'骑兵移动力+1',   detail:'铁骑神速，纵横疆场' },
 ];
+
+const GENERALS = {
+  wei: [
+    { id:'wei_r1', name:'魏国校尉', rarity:1, hp:10, atk:5,  def:3, mv:1, r1:1, r2:1, deployGold:20,
+      skills:[{ id:'boost',     name:'鼓舞',     type:'active',  uses:1, desc:'相邻友方步兵本回合攻击+2',    target:'immediate' }] },
+    { id:'wei_r2', name:'乐进',     rarity:2, hp:15, atk:7,  def:4, mv:1, r1:1, r2:1, deployGold:50,
+      skills:[{ id:'surge',     name:'突击',     type:'active',  uses:2, desc:'本回合可再次攻击一次',        target:'immediate' }] },
+    { id:'wei_r3', name:'夏侯惇',   rarity:3, hp:20, atk:9,  def:5, mv:2, r1:1, r2:1, deployGold:100,
+      skills:[{ id:'fierceatk', name:'独眼猛将', type:'active',  uses:2, desc:'本回合自身攻击+4',            target:'immediate' },
+              { id:'stubborn',  name:'不退',     type:'passive',        desc:'HP<50%时防御翻倍' }] },
+    { id:'wei_r4', name:'张辽',     rarity:4, hp:28, atk:11, def:6, mv:2, r1:1, r2:1, deployGold:200,
+      skills:[{ id:'weaken',    name:'威震逍遥', type:'active',  uses:1, desc:'本回合敌方全体攻击-2',        target:'immediate' },
+              { id:'pierce',    name:'陷阵',     type:'active',  uses:2, desc:'下次攻击双倍伤害',            target:'immediate' }] },
+    { id:'wei_r5', name:'曹操',     rarity:5, hp:40, atk:14, def:7, mv:2, r1:1, r2:1, deployGold:400,
+      skills:[{ id:'edict',     name:'挟天子令', type:'active',  uses:1, desc:'我方全体本回合可再次行动',    target:'immediate' },
+              { id:'greed',     name:'奸雄之志', type:'passive',        desc:'击败敌方单位额外获得20金' }] },
+  ],
+  shu: [
+    { id:'shu_r1', name:'蜀国小校', rarity:1, hp:10, atk:5,  def:3, mv:1, r1:1, r2:1, deployGold:20,
+      skills:[{ id:'brave',     name:'誓死',     type:'passive',        desc:'HP<30%时攻击+3' }] },
+    { id:'shu_r2', name:'关平',     rarity:2, hp:15, atk:7,  def:4, mv:1, r1:1, r2:1, deployGold:50,
+      skills:[{ id:'guard',     name:'护卫',     type:'active',  uses:2, desc:'相邻武将本回合受到伤害减半',  target:'immediate' }] },
+    { id:'shu_r3', name:'魏延',     rarity:3, hp:20, atk:9,  def:4, mv:2, r1:1, r2:1, deployGold:100,
+      skills:[{ id:'flank',     name:'子午奇谋', type:'active',  uses:1, desc:'攻击任意位置的敌方单位',      target:'target_enemy' },
+              { id:'martyr',    name:'悍将之魂', type:'passive',        desc:'阵亡时相邻敌方各受3伤害' }] },
+    { id:'shu_r4', name:'关羽',     rarity:4, hp:28, atk:11, def:5, mv:3, r1:1, r2:1, deployGold:200,
+      skills:[{ id:'slayer',    name:'温酒斩将', type:'active',  uses:1, desc:'下次攻击武将造成三倍伤害',    target:'immediate' },
+              { id:'redrabbit', name:'赤兔马',   type:'passive',        desc:'移动力+1（已生效）' }] },
+    { id:'shu_r5', name:'诸葛亮',   rarity:5, hp:40, atk:12, def:6, mv:2, r1:1, r2:3, deployGold:400,
+      skills:[{ id:'phantom',   name:'空城计',   type:'active',  uses:1, desc:'本回合友方全体免疫伤害',      target:'immediate' },
+              { id:'trap',      name:'八卦阵',   type:'active',  uses:2, desc:'使一敌方单位下回合无法行动',  target:'target_enemy' }] },
+  ],
+  wu: [
+    { id:'wu_r1',  name:'水军校尉', rarity:1, hp:10, atk:6,  def:3, mv:1, r1:1, r2:1, deployGold:20,
+      skills:[{ id:'seafight',  name:'水战',     type:'active',  uses:2, desc:'本回合攻击+3',                target:'immediate' }] },
+    { id:'wu_r2',  name:'太史慈',   rarity:2, hp:15, atk:7,  def:4, mv:1, r1:1, r2:2, deployGold:50,
+      skills:[{ id:'precision', name:'利箭',     type:'passive',        desc:'攻击射程+1（已生效）' }] },
+    { id:'wu_r3',  name:'甘宁',     rarity:3, hp:20, atk:9,  def:4, mv:2, r1:1, r2:1, deployGold:100,
+      skills:[{ id:'piercewall',name:'铃铛将',   type:'active',  uses:1, desc:'本回合移动可穿越敌方',        target:'immediate' },
+              { id:'colstrike', name:'百骑劫营', type:'active',  uses:1, desc:'攻击同列所有敌方单位',        target:'immediate' }] },
+    { id:'wu_r4',  name:'陆逊',     rarity:4, hp:28, atk:10, def:6, mv:2, r1:1, r2:2, deployGold:200,
+      skills:[{ id:'burn',      name:'火烧连营', type:'active',  uses:1, desc:'同行所有敌方各受5伤害',       target:'immediate' },
+              { id:'scholar',   name:'儒将',     type:'passive',        desc:'友方被攻击时防御+2' }] },
+    { id:'wu_r5',  name:'周瑜',     rarity:5, hp:40, atk:13, def:6, mv:2, r1:1, r2:3, deployGold:400,
+      skills:[{ id:'firestrike',name:'火计',     type:'active',  uses:1, desc:'同行所有敌方按攻击力造成伤害',target:'immediate' },
+              { id:'rivalry',   name:'既生瑜',   type:'passive',        desc:'敌方有5星武将时我方全体攻+20%' }] },
+  ],
+};
+
+const RARITY_COLORS = ['#aaaaaa','#44aaff','#cc66ff','#ffaa22','#ff4444'];
+const RARITY_WEIGHTS = [55, 25, 12, 6, 2];
 
 // =============================================
 //  STATE
@@ -396,23 +318,31 @@ function newState() {
     gold: [500, 500],
     units: [],
     nextId: 1,
-    // setup
+    pickPlayer: 0,
+    // Gacha
+    gachaP: 0,
+    gachaDraw:     [[], []],
+    gachaRevealed: [],
+    gachaHand:     [[], []],
+    // Setup
     setupP: 0,
     buyType: null,
-    // battle
+    deployGenIdx: null,
+    // Battle
     bTurn: 0,
     selected: null,
     hlMv:  new Set(),
     hlAtk: new Set(),
     movedSet:  new Set(),
     atkSet:    new Set(),
+    skillUsed: new Map(),
+    unitBuffs: {},
+    immobilized: new Set(),
     log: [],
     winner: null,
-    // handoff
-    handoffTitle: '',
-    handoffDesc: '',
-    handoffBtn: '',
-    handoffNext: null,
+    skillMode: null,
+    // Handoff
+    handoffTitle: '', handoffDesc: '', handoffBtn: '', handoffNext: null,
   };
 }
 
@@ -425,21 +355,61 @@ function addLog(msg) {
 //  UNIT HELPERS
 // =============================================
 function makeUnit(player, type, row, col) {
-  const d = UDEFS[type];
+  const d   = UDEFS[type];
   const nat = NATIONS.find(n => n.id === S.nations[player]);
   let a = d.a, def = d.d, hp = d.h, mv = d.mv;
   if (nat.bonus === 'infantry' && type === 'infantry') { a += 1; def += 1; }
   if (nat.bonus === 'cavalry'  && type === 'cavalry')  { mv += 1; }
-  return { id: S.nextId++, player, type, row, col, hp, maxHp: hp, a, def, mv, r1: d.r1, r2: d.r2, alive: true };
+  return { id: S.nextId++, player, type, row, col, hp, maxHp: hp, atk: a, def, mv, r1: d.r1, r2: d.r2, alive: true, isGeneral: false };
+}
+
+function makeGeneral(player, genDef, row, col) {
+  return {
+    id: S.nextId++, player, type: 'general',
+    row, col, hp: genDef.hp, maxHp: genDef.hp,
+    atk: genDef.atk, def: genDef.def, mv: genDef.mv,
+    r1: genDef.r1, r2: genDef.r2,
+    alive: true, isGeneral: true, genDef,
+    name: genDef.name,
+  };
 }
 
 const unitAt  = (r, c) => S.units.find(u => u.alive && u.row === r && u.col === c);
-const getUnit = id     => S.units.find(u => u.id === id);
+const getUnit = id      => S.units.find(u => u.id === id);
+
+function hasPassive(unit, pid) {
+  return unit.isGeneral && unit.genDef && unit.genDef.skills.some(s => s.type === 'passive' && s.id === pid);
+}
+function hasAllyPassive(player, pid) {
+  return S.units.some(u => u.alive && u.player === player && hasPassive(u, pid));
+}
+function enemy5StarAlive(enemyP) {
+  return S.units.some(u => u.alive && u.player === enemyP && u.isGeneral && u.genDef && u.genDef.rarity === 5);
+}
+
+function getEffectiveAtk(unit) {
+  const buffs = S.unitBuffs[unit.id] || {};
+  let a = unit.atk + (buffs.atkBonus || 0);
+  if (buffs.atkDebuff)                                           a = Math.max(1, a - 2);
+  if (hasPassive(unit, 'brave') && unit.hp < unit.maxHp * 0.3) a += 3;
+  if (hasAllyPassive(unit.player, 'rivalry') && enemy5StarAlive(1 - unit.player)) a = Math.floor(a * 1.2);
+  return Math.max(1, a);
+}
+
+function getEffectiveDef(unit) {
+  const buffs = S.unitBuffs[unit.id] || {};
+  let d = unit.def + (buffs.defBonus || 0);
+  if (hasAllyPassive(unit.player, 'scholar'))                     d += 2;
+  if (hasPassive(unit, 'stubborn') && unit.hp < unit.maxHp * 0.5) d = Math.floor(d * 2);
+  return d;
+}
 
 // =============================================
 //  MOVEMENT BFS
 // =============================================
 function getMoveRange(unit) {
+  const buffs = S.unitBuffs[unit.id] || {};
+  const canPierce = !!buffs.linePierce;
   const reach = new Set();
   const best  = new Map([[unit.row + ',' + unit.col, unit.mv]]);
   const queue = [{ r: unit.row, c: unit.col, mp: unit.mv }];
@@ -448,16 +418,17 @@ function getMoveRange(unit) {
     for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
       const nr = r + dr, nc = c + dc;
       if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
-      const t = TERRAIN[TMAP[nr][nc]];
+      const t    = TERRAIN[TMAP[nr][nc]];
       if (unit.type === 'cavalry' && t.noCav) continue;
       const cost = (unit.type === 'cavalry' && t.cavCost) ? t.cavCost : 1;
       const rem  = mp - cost;
       if (rem < 0) continue;
-      if (unitAt(nr, nc)) continue;
+      const occ = unitAt(nr, nc);
+      if (occ && !(canPierce && occ.player !== unit.player)) continue;
       const key = nr + ',' + nc;
       if (best.has(key) && best.get(key) >= rem) continue;
       best.set(key, rem);
-      reach.add(key);
+      if (!occ) reach.add(key);
       if (rem > 0) queue.push({ r: nr, c: nc, mp: rem });
     }
   }
@@ -465,13 +436,18 @@ function getMoveRange(unit) {
 }
 
 function getAtkRange(unit) {
+  if (S.skillMode && S.skillMode.casterUnitId === unit.id && S.skillMode.skillId === 'flank') {
+    const t = new Set();
+    S.units.forEach(u => { if (u.alive && u.player !== unit.player) t.add(u.row + ',' + u.col); });
+    return t;
+  }
   const targets = new Set();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const d = Math.abs(r - unit.row) + Math.abs(c - unit.col);
-      if (d >= unit.r1 && d <= unit.r2) {
-        const occ = unitAt(r, c);
-        if (occ && occ.player !== unit.player) targets.add(r + ',' + c);
+      const d   = Math.abs(r - unit.row) + Math.abs(c - unit.col);
+      const occ = unitAt(r, c);
+      if (d >= unit.r1 && d <= unit.r2 && occ && occ.player !== unit.player) {
+        if (!(S.unitBuffs[occ.id] || {}).immune) targets.add(r + ',' + c);
       }
     }
   }
@@ -482,21 +458,67 @@ function getAtkRange(unit) {
 //  COMBAT
 // =============================================
 function calcDamage(att, def) {
-  const t = TERRAIN[TMAP[def.row][def.col]];
-  return Math.max(1, Math.floor(att.a - (def.def + t.def) * 0.5));
+  const t    = TERRAIN[TMAP[def.row][def.col]];
+  const aAtk = getEffectiveAtk(att);
+  let   dDef = getEffectiveDef(def) + t.def;
+  if ((S.unitBuffs[def.id] || {}).shield) dDef += def.def; // guard skill: extra def = half damage approx
+  return Math.max(1, Math.floor(aAtk - dDef * 0.5));
 }
 
 function doAttack(att, def) {
-  const dmg = calcDamage(att, def);
+  let dmg = calcDamage(att, def);
+
+  // pierce (陷阵): double damage
+  if ((S.unitBuffs[att.id] || {}).double) {
+    dmg *= 2;
+    S.unitBuffs[att.id].double = false;
+    addLog('【陷阵】双倍伤害！');
+  }
+  // slayer (温酒斩将): triple damage vs general
+  if ((S.unitBuffs[att.id] || {}).triple && def.isGeneral) {
+    dmg *= 3;
+    S.unitBuffs[att.id].triple = false;
+    addLog('【温酒斩将】三倍伤害！');
+  }
+
   def.hp -= dmg;
-  const an = UDEFS[att.type].n, dn = UDEFS[def.type].n;
-  addLog('P' + (att.player+1) + an + ' → P' + (def.player+1) + dn + ' −' + dmg);
+  const an = att.name || UDEFS[att.type].n;
+  const dn = def.name || UDEFS[def.type].n;
+  addLog('P' + (att.player+1) + ' ' + an + ' → ' + dn + ' −' + dmg);
+
   if (def.hp <= 0) {
     def.hp = 0;
-    def.alive = false;
-    addLog('P' + (def.player+1) + dn + ' 阵亡 ✕');
+    onDeath(def, att);
+    // kill reward
+    const reward = def.isGeneral
+      ? Math.floor(def.genDef.deployGold * 0.5)
+      : Math.floor((UDEFS[def.type] ? UDEFS[def.type].cost : 50) * 0.3);
+    S.gold[att.player] += reward;
+    addLog(dn + ' 阵亡 ✕  获得 ' + reward + ' 金');
+    // greed (奸雄之志)
+    if (hasPassive(att, 'greed')) {
+      S.gold[att.player] += 20;
+      addLog('【奸雄之志】额外 +20 金');
+    }
   }
+  // consume shield
+  if ((S.unitBuffs[def.id] || {}).shield) S.unitBuffs[def.id].shield = false;
   S.atkSet.add(att.id);
+}
+
+function onDeath(unit, killer) {
+  unit.alive = false;
+  // martyr (悍将之魂)
+  if (hasPassive(unit, 'martyr')) {
+    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+      const occ = unitAt(unit.row + dr, unit.col + dc);
+      if (occ && occ.player !== unit.player) {
+        occ.hp -= 3;
+        addLog('【悍将之魂】' + (occ.name || UDEFS[occ.type].n) + ' −3');
+        if (occ.hp <= 0) { occ.hp = 0; onDeath(occ, unit); }
+      }
+    }
+  }
 }
 
 function checkWin() {
@@ -508,18 +530,185 @@ function checkWin() {
 }
 
 // =============================================
+//  SKILLS
+// =============================================
+function getSkillUses(unit, skillDef) {
+  const key = unit.id + '_' + skillDef.id;
+  return (S.skillUsed.get(key) || 0);
+}
+
+function useSkill(unit, skillDef) {
+  const key = unit.id + '_' + skillDef.id;
+  S.skillUsed.set(key, (S.skillUsed.get(key) || 0) + 1);
+}
+
+function activateSkill(unitId, skillId) {
+  const unit = getUnit(unitId);
+  if (!unit) return;
+  const skillDef = unit.genDef.skills.find(s => s.id === skillId);
+  if (!skillDef || skillDef.type === 'passive') return;
+  if (getSkillUses(unit, skillDef) >= skillDef.uses) return;
+
+  const buffs = S.unitBuffs[unit.id] || {};
+  S.unitBuffs[unit.id] = buffs;
+
+  switch (skillId) {
+    case 'boost': {
+      let cnt = 0;
+      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+        const u = unitAt(unit.row + dr, unit.col + dc);
+        if (u && u.alive && u.player === unit.player && u.type === 'infantry') {
+          S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
+          S.unitBuffs[u.id].atkBonus = (S.unitBuffs[u.id].atkBonus || 0) + 2;
+          cnt++;
+        }
+      }
+      addLog(unit.name + ' 鼓舞：' + cnt + '支步兵攻击+2');
+      break;
+    }
+    case 'surge':
+      S.atkSet.delete(unit.id);
+      addLog(unit.name + ' 突击：可再次攻击！');
+      break;
+    case 'fierceatk':
+      buffs.atkBonus = (buffs.atkBonus || 0) + 4;
+      addLog(unit.name + ' 独眼猛将：攻击+4');
+      break;
+    case 'weaken':
+      S.units.filter(u => u.alive && u.player !== unit.player).forEach(u => {
+        S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
+        S.unitBuffs[u.id].atkDebuff = true;
+      });
+      addLog(unit.name + ' 威震逍遥：敌方全体攻击-2');
+      break;
+    case 'pierce':
+      buffs.double = true;
+      addLog(unit.name + ' 陷阵：下次攻击双倍！');
+      break;
+    case 'edict':
+      S.units.filter(u => u.alive && u.player === unit.player).forEach(u => {
+        S.movedSet.delete(u.id);
+        S.atkSet.delete(u.id);
+      });
+      addLog(unit.name + ' 挟天子令：我方全体再次行动！');
+      break;
+    case 'guard': {
+      let cnt = 0;
+      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+        const u = unitAt(unit.row + dr, unit.col + dc);
+        if (u && u.alive && u.player === unit.player && u.isGeneral) {
+          S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
+          S.unitBuffs[u.id].shield = true;
+          cnt++;
+        }
+      }
+      addLog(unit.name + ' 护卫：' + cnt + '名相邻武将受到保护');
+      break;
+    }
+    case 'flank':
+      S.skillMode = { skillId: 'flank', casterUnitId: unitId };
+      S.hlMv.clear(); S.hlAtk.clear();
+      getAtkRange(unit).forEach(k => S.hlAtk.add(k));
+      addLog(unit.name + ' 子午奇谋：选择攻击目标！');
+      useSkill(unit, skillDef);
+      go(); return;
+    case 'slayer':
+      buffs.triple = true;
+      addLog(unit.name + ' 温酒斩将：下次攻击武将三倍！');
+      break;
+    case 'phantom':
+      S.units.filter(u => u.alive && u.player === unit.player).forEach(u => {
+        S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
+        S.unitBuffs[u.id].immune = true;
+      });
+      addLog(unit.name + ' 空城计：我方全体本回合免疫！');
+      break;
+    case 'trap':
+      S.skillMode = { skillId: 'trap', casterUnitId: unitId };
+      S.hlMv.clear(); S.hlAtk.clear();
+      S.units.filter(u => u.alive && u.player !== unit.player)
+             .forEach(u => S.hlAtk.add(u.row + ',' + u.col));
+      addLog(unit.name + ' 八卦阵：选择要困住的敌方单位！');
+      useSkill(unit, skillDef);
+      go(); return;
+    case 'seafight':
+      buffs.atkBonus = (buffs.atkBonus || 0) + 3;
+      addLog(unit.name + ' 水战：攻击+3');
+      break;
+    case 'piercewall':
+      buffs.linePierce = true;
+      S.movedSet.delete(unit.id);
+      S.hlMv.clear();
+      getMoveRange(unit).forEach(k => S.hlMv.add(k));
+      addLog(unit.name + ' 铃铛将：本回合可穿越敌方！');
+      useSkill(unit, skillDef);
+      go(); return;
+    case 'colstrike': {
+      const enemies = S.units.filter(u => u.alive && u.player !== unit.player && u.col === unit.col);
+      enemies.forEach(e => {
+        const dmg = Math.max(1, unit.atk - e.def);
+        e.hp -= dmg;
+        addLog(unit.name + ' 百骑劫营 → ' + (e.name || UDEFS[e.type].n) + ' −' + dmg);
+        if (e.hp <= 0) { e.hp = 0; onDeath(e, unit); }
+      });
+      S.atkSet.add(unit.id);
+      checkWin();
+      break;
+    }
+    case 'burn': {
+      const enemies = S.units.filter(u => u.alive && u.player !== unit.player && u.row === unit.row);
+      enemies.forEach(e => {
+        e.hp -= 5;
+        addLog(unit.name + ' 火烧连营 → ' + (e.name || UDEFS[e.type].n) + ' −5');
+        if (e.hp <= 0) { e.hp = 0; onDeath(e, unit); }
+      });
+      S.atkSet.add(unit.id);
+      checkWin();
+      break;
+    }
+    case 'firestrike': {
+      const enemies = S.units.filter(u => u.alive && u.player !== unit.player && u.row === unit.row);
+      enemies.forEach(e => {
+        const dmg = Math.max(1, Math.floor(unit.atk * 1.5 - e.def));
+        e.hp -= dmg;
+        addLog(unit.name + ' 火计 → ' + (e.name || UDEFS[e.type].n) + ' −' + dmg);
+        if (e.hp <= 0) { e.hp = 0; onDeath(e, unit); }
+      });
+      S.atkSet.add(unit.id);
+      checkWin();
+      break;
+    }
+  }
+
+  useSkill(unit, skillDef);
+  clearSkillMode();
+  go();
+}
+
+function clearSkillMode() { S.skillMode = null; }
+
+// =============================================
 //  RENDER HELPERS
 // =============================================
 function renderUnitToken(unit) {
-  const d = UDEFS[unit.type];
-  const pct = unit.hp / unit.maxHp * 100;
-  const barCls = pct > 60 ? '' : pct > 30 ? ' med' : ' low';
+  const d    = unit.isGeneral ? null : UDEFS[unit.type];
+  const pct  = unit.hp / unit.maxHp * 100;
+  const barC = pct > 60 ? '' : pct > 30 ? ' med' : ' low';
   const done = S.movedSet.has(unit.id) && S.atkSet.has(unit.id);
   const sel  = S.selected === unit.id;
-  return '<div class="u-tok p' + unit.player + (sel ? ' selected' : '') + (done ? ' done' : '') + '">' +
-    '<div class="u-icon">' + d.e + '</div>' +
-    '<div class="u-hp">' + unit.hp + '</div>' +
-    '<div class="u-bar"><div class="u-bar-fill' + barCls + '" style="width:' + pct + '%"></div></div>' +
+  const gen  = unit.isGeneral;
+  let inner;
+  if (gen) {
+    const shortName = unit.name.length > 3 ? unit.name.slice(-2) : unit.name;
+    inner = '<div class="u-gname">' + shortName + '</div>' +
+            '<div class="u-hp">' + unit.hp + '</div>';
+  } else {
+    inner = '<div class="u-icon">' + d.e + '</div>' +
+            '<div class="u-hp">' + unit.hp + '</div>';
+  }
+  return '<div class="u-tok p' + unit.player + (gen ? ' gen' : '') + (sel ? ' selected' : '') + (done ? ' done' : '') + '">' +
+    inner +
+    '<div class="u-bar"><div class="u-bar-fill' + barC + '" style="width:' + pct + '%"></div></div>' +
     '</div>';
 }
 
@@ -537,27 +726,23 @@ function renderMap(setupMode) {
       }
       if (S.hlMv.has(key))  cls += ' hl-move';
       if (S.hlAtk.has(key)) cls += ' hl-atk';
-      const inner = occ
-        ? renderUnitToken(occ)
-        : '<span class="terrain-lbl">' + t.name + '</span>';
+      const inner = occ ? renderUnitToken(occ) : '<span class="terrain-lbl">' + t.name + '</span>';
       html += '<div class="' + cls + '" style="background:' + t.bg + '"' +
               ' data-r="' + r + '" data-c="' + c + '"' +
-              ' onclick="cellClick(' + r + ',' + c + ')">' +
-              inner + '</div>';
+              ' onclick="cellClick(' + r + ',' + c + ')">' + inner + '</div>';
     }
   }
-  html += '</div>';
-  return html;
+  return html + '</div>';
 }
 
 function terrainLegend() {
   return '<div class="t-legend">' +
-    TERRAIN.map((t,i) => '<div class="t-legend-item"><div class="t-swatch" style="background:' + t.bg + '"></div>' + t.name + (t.def ? '（防御+'+t.def+'）' : '') + '</div>').join('') +
+    TERRAIN.map(t => '<div class="t-legend-item"><div class="t-swatch" style="background:' + t.bg + '"></div>' + t.name + (t.def ? '（防御+'+t.def+'）':'') + '</div>').join('') +
     '</div>';
 }
 
 // =============================================
-//  SCREENS
+//  SCREEN BUILDERS
 // =============================================
 function go() {
   document.getElementById('screen').innerHTML = buildScreen();
@@ -568,6 +753,7 @@ function buildScreen() {
     case 'menu':     return buildMenu();
     case 'handoff':  return buildHandoff();
     case 'country':  return buildCountry();
+    case 'gacha':    return buildGacha();
     case 'setup':    return buildSetup();
     case 'battle':   return buildBattle();
     case 'gameover': return buildGameover();
@@ -577,10 +763,10 @@ function buildScreen() {
 
 function buildMenu() {
   return '<div class="s-menu fade-in">' +
-    '<h1>三国争霸</h1>' +
-    '<div class="subtitle">单屏双人回合制策略小游戏</div>' +
-    '<div class="feats">⚔ 魏·蜀·吴 三国对决 &nbsp;|&nbsp; 步兵·弓兵·骑兵 三种兵种<br>' +
-    '回合制战斗 &nbsp;|&nbsp; 地形加成 &nbsp;|&nbsp; 国家特色</div>' +
+    '<h1>纸上谈兵</h1>' +
+    '<div class="subtitle">三国 · 单屏双人回合制策略小游戏</div>' +
+    '<div class="feats">⚔ 魏·蜀·吴 三国对决 &nbsp;|&nbsp; 步兵·弓兵·骑兵<br>' +
+    '🃏 武将抽卡系统 &nbsp;|&nbsp; 技能释放 &nbsp;|&nbsp; 地形加成</div>' +
     '<button class="btn" onclick="startGame()">开始游戏</button>' +
     '</div>';
 }
@@ -595,16 +781,15 @@ function buildHandoff() {
 }
 
 function buildCountry() {
-  const p = S.pickPlayer;
-  const cards = NATIONS.map(function(n) {
+  const p     = S.pickPlayer;
+  const cards = NATIONS.map(n => {
     const taken = (p === 1 && S.nations[0] === n.id);
-    const oc = taken ? '' : "pickNation('" + n.id + "')";
     return '<div class="c-card' + (taken ? ' taken' : '') + '"' +
       ' style="border-color:' + (taken ? '#333' : n.col) + '"' +
-      ' onclick="' + oc + '">' +
+      (taken ? '' : ' onclick="pickNation(\'' + n.id + '\')"') + '>' +
       '<div class="cc-name" style="color:' + n.col + '">' + n.icon + ' ' + n.n + '</div>' +
-      '<div class="cc-bonus">' + n.bdesc + '<br><br><small style="color:#665544">' + n.detail + '</small></div>' +
-      (taken ? '<div class="cc-taken">（已被选择）</div>' : '') +
+      '<div class="cc-bonus">' + n.bdesc + '<br><small style="color:#665544">' + n.detail + '</small></div>' +
+      (taken ? '<div style="font-size:11px;color:#5a4a2a;margin-top:8px">（已被选择）</div>' : '') +
       '</div>';
   }).join('');
   return '<div class="s-country fade-in">' +
@@ -614,44 +799,96 @@ function buildCountry() {
     '</div>';
 }
 
+function buildGacha() {
+  const p    = S.gachaP;
+  const nat  = NATIONS.find(n => n.id === S.nations[p]);
+  const draw = S.gachaDraw[p];
+
+  const cardsHtml = [0, 1, 2].map(i => {
+    if (i >= draw.length) {
+      return '<div class="gacha-card face-down" onclick="doGachaDraw(' + p + ', ' + i + ')">' +
+        '<div class="gc-question">?</div>' +
+        '<div class="gc-hint">点击抽取（第' + (i+1) + '张）</div>' +
+        '</div>';
+    }
+    const g     = draw[i];
+    const rc    = RARITY_COLORS[g.rarity - 1];
+    const stars = '★'.repeat(g.rarity) + '☆'.repeat(5 - g.rarity);
+    const skillsHtml = g.skills.map(s =>
+      '<span class="skill-tag' + (s.type === 'passive' ? ' passive' : '') + '">' + s.name + '</span>'
+    ).join('');
+    return '<div class="gacha-card revealed" style="border-color:' + rc + '">' +
+      '<div class="gc-rarity" style="color:' + rc + '">' + stars + '</div>' +
+      '<div class="gc-name">' + g.name + '</div>' +
+      '<div class="gc-stats">HP ' + g.hp + ' &nbsp;攻 ' + g.atk + ' &nbsp;防 ' + g.def + ' &nbsp;移 ' + g.mv + '<br>费用 ' + g.deployGold + ' 金</div>' +
+      '<div class="gc-skills">' + skillsHtml + '</div>' +
+      '</div>';
+  }).join('');
+
+  const allRevealed = draw.length >= 3;
+  return '<div class="s-gacha fade-in">' +
+    '<h2 style="color:' + nat.col + '">玩家' + (p+1) + ' · ' + nat.n + '国</h2>' +
+    '<div class="g-sub">抽取武将 · 共3次免费 · 布置阶段可上场</div>' +
+    '<div class="gacha-cards">' + cardsHtml + '</div>' +
+    (allRevealed
+      ? '<button class="btn" onclick="doneGacha()">进入布置阶段 →</button>'
+      : '<p style="color:#5a4a2a;font-size:13px">翻开所有卡牌后继续</p>') +
+    '</div>';
+}
+
 function buildSetup() {
   const p   = S.setupP;
   const nat = NATIONS.find(n => n.id === S.nations[p]);
   const zone = p === 0 ? '左侧前3列（蓝色区域）' : '右侧后3列（红色区域）';
 
-  const btns = Object.keys(UDEFS).map(function(type) {
+  // Unit buy buttons
+  const btns = Object.keys(UDEFS).map(type => {
     const d     = UDEFS[type];
     const count = S.units.filter(u => u.player === p && u.type === type).length;
     const can   = S.gold[p] >= d.cost && count < d.lim;
     const act   = S.buyType === type;
-    const oc    = can ? "setBuyType('" + type + "')" : '';
     return '<div class="utype-btn' + (act ? ' active' : '') + (can ? '' : ' disabled') + '"' +
-      ' onclick="' + oc + '">' +
+      (can ? ' onclick="setBuyType(\'' + type + '\')"' : '') + '>' +
       d.e + ' ' + d.n + ' <span class="utype-cost">' + d.cost + '金</span>' +
       '<span class="utype-count">' + count + '/' + d.lim + '</span><br>' +
-      '<small style="color:#665540">攻' + d.a + ' 防' + d.d + ' 血' + d.h + ' 移' + d.mv + ' 射' + d.r1 + '-' + d.r2 + '</small>' +
+      '<small style="color:#665540">攻' + d.a + ' 防' + d.d + ' 血' + d.h + ' 移' + d.mv + '</small>' +
       '</div>';
   }).join('');
 
-  const hint = S.buyType
-    ? '已选【' + UDEFS[S.buyType].n + '】→ 点击' + zone + '放置'
-    : '请先点击左侧兵种，再点击' + zone + '放置';
+  // General deploy buttons
+  const hand   = S.gachaHand[p];
+  const genBtns = hand.length > 0
+    ? hand.map((g, idx) => {
+        const deployed = S.units.some(u => u.player === p && u.isGeneral && u.genDef && u.genDef.id === g.id);
+        const canDeploy = !deployed && S.gold[p] >= g.deployGold;
+        const act = S.deployGenIdx === idx;
+        const rc  = RARITY_COLORS[g.rarity - 1];
+        return '<div class="utype-btn general-btn' + (act ? ' active' : '') + (!canDeploy ? ' disabled' : '') + '"' +
+          (canDeploy ? ' onclick="setDeployGen(' + idx + ')"' : '') + '>' +
+          '<span style="color:' + rc + '">★' + g.rarity + '</span> ' + g.name +
+          ' <span class="utype-cost">' + g.deployGold + '金</span>' +
+          (deployed ? '<span class="utype-count" style="color:#44aa44">已上场</span>' : '') +
+          '</div>';
+      }).join('')
+    : '<div style="font-size:11px;color:#5a4a2a">（未抽到武将）</div>';
+
+  let hint = '请点击左侧兵种/武将，再点击' + zone + '放置';
+  if (S.buyType)       hint = '已选【' + UDEFS[S.buyType].n + '】→ 点击' + zone + '放置';
+  if (S.deployGenIdx !== null && hand[S.deployGenIdx]) hint = '已选武将【' + hand[S.deployGenIdx].name + '】→ 点击' + zone + '放置';
 
   return '<div class="s-setup fade-in">' +
     '<div class="side-panel">' +
       '<div class="panel-h" style="color:' + nat.col + '">玩家' + (p+1) + ' · ' + nat.n + '国</div>' +
       '<div class="gold-num">💰 ' + S.gold[p] + '</div>' +
       '<div class="bonus-txt">' + nat.bdesc + '</div>' +
-      '<div class="panel-h">购买兵种</div>' +
-      btns +
-      '<br>' +
-      '<button class="btn sm" style="width:100%" onclick="doneSetup()">完成布置 →</button>' +
+      '<div class="panel-h">兵种</div>' + btns +
+      '<div class="panel-h" style="margin-top:8px">武将（手牌）</div>' + genBtns +
+      '<br><button class="btn sm" style="width:100%" onclick="doneSetup()">完成布置 →</button>' +
     '</div>' +
     '<div class="setup-main">' +
       '<div class="setup-title">玩家' + (p+1) + ' 布置阶段</div>' +
       '<div class="setup-hint">' + hint + '</div>' +
-      renderMap(true) +
-      terrainLegend() +
+      renderMap(true) + terrainLegend() +
     '</div>' +
     '<div class="side-panel" style="visibility:hidden"></div>' +
     '</div>';
@@ -665,18 +902,37 @@ function buildBattle() {
     S.units.filter(u=>u.alive&&u.player===1).length,
   ];
 
+  // Unit info + skill buttons
   let infoTxt = '<span style="color:#5a4a2a">点击己方单位进行操作</span>';
+  let skillBtnsHtml = '';
   if (S.selected !== null) {
     const u = getUnit(S.selected);
     if (u) {
-      const d = UDEFS[u.type];
+      const dname = u.isGeneral ? u.name : UDEFS[u.type].n;
       const moved = S.movedSet.has(u.id), atked = S.atkSet.has(u.id);
+      const immob = S.immobilized.has(u.id);
       infoTxt =
-        '<strong style="color:#d4a030">' + d.n + '</strong>&nbsp; ' +
-        '攻<b>' + u.a + '</b> 防<b>' + u.def + '</b> 血<b>' + u.hp + '/' + u.maxHp + '</b>&nbsp;&nbsp;' +
-        '<span style="color:' + (moved ? '#556' : '#4af') + '">' + (moved ? '✓已移动' : '可移动') + '</span>&nbsp;' +
-        '<span style="color:' + (atked ? '#556' : '#f44') + '">' + (atked ? '✓已攻击' : '可攻击') + '</span>' +
-        (moved && atked ? '&nbsp;<span style="color:#996">· 行动完毕</span>' : '');
+        '<strong style="color:#d4a030">' + dname + '</strong> &nbsp;' +
+        '攻<b>' + getEffectiveAtk(u) + '</b> 防<b>' + getEffectiveDef(u) + '</b> 血<b>' + u.hp + '/' + u.maxHp + '</b>&nbsp;&nbsp;' +
+        '<span style="color:' + (moved ? '#556':'#4af') + '">' + (moved?'✓已移动':'可移动') + '</span>&nbsp;' +
+        '<span style="color:' + (atked ? '#556':'#f44') + '">' + (atked?'✓已攻击':'可攻击') + '</span>' +
+        (immob ? '&nbsp;<span style="color:#aa4400">【被困】</span>' : '');
+
+      // Skill buttons for generals
+      if (u.isGeneral && u.genDef) {
+        const activeSk = u.genDef.skills.filter(s => s.type === 'active');
+        if (activeSk.length > 0) {
+          skillBtnsHtml = '<div class="skill-btns">' +
+            activeSk.map(sk => {
+              const used    = getSkillUses(u, sk) >= sk.uses;
+              const targeting = S.skillMode && S.skillMode.skillId === sk.id;
+              return '<button class="skill-btn' + (used ? ' used' : '') + (targeting ? ' targeting' : '') + '"' +
+                (used ? '' : ' onclick="activateSkill(' + u.id + ', \'' + sk.id + '\')"') + '>' +
+                sk.name + ' (' + (sk.uses - getSkillUses(u, sk)) + '次)' +
+                '</button>';
+            }).join('') + '</div>';
+        }
+      }
     }
   }
 
@@ -699,7 +955,7 @@ function buildBattle() {
     renderMap(false) +
     terrainLegend() +
     '<div class="battle-btm">' +
-      '<div class="unit-info">' + infoTxt + '</div>' +
+      '<div class="unit-info">' + infoTxt + (skillBtnsHtml ? '<br>' + skillBtnsHtml : '') + '</div>' +
       '<div class="battle-log">' + logHtml + '</div>' +
       '<button class="btn" onclick="endTurn()">结束回合</button>' +
     '</div>' +
@@ -733,9 +989,8 @@ function pickNation(id) {
     S.phase = 'handoff';
     S.handoffNext  = function() { S.pickPlayer = 1; S.phase = 'country'; };
   } else {
-    S.setupP   = 0;
-    S.buyType  = null;
-    S.phase    = 'setup';
+    S.gachaP = 0;
+    S.phase  = 'gacha';
   }
   go();
 }
@@ -745,8 +1000,50 @@ function handoffContinue() {
   go();
 }
 
+// ---- GACHA ----
+function doGachaDraw(p, idx) {
+  if (S.gachaDraw[p].length !== idx) return; // must draw in order
+  const nat  = NATIONS.find(n => n.id === S.nations[p]);
+  const pool = GENERALS[nat.id];
+  // Weighted pick
+  let rand = Math.random() * 100;
+  let result = pool[pool.length - 1];
+  for (let i = 0; i < RARITY_WEIGHTS.length; i++) {
+    rand -= RARITY_WEIGHTS[i];
+    if (rand <= 0) { result = pool[i]; break; }
+  }
+  S.gachaDraw[p].push(result);
+  go();
+}
+
+function doneGacha() {
+  const p = S.gachaP;
+  S.gachaHand[p] = [...S.gachaDraw[p]];
+  if (p === 0) {
+    S.handoffTitle = '玩家1抽将完毕';
+    S.handoffDesc  = '请将设备交给玩家2进行抽将，玩家1请背对屏幕。';
+    S.handoffBtn   = '玩家2准备好了 →';
+    S.phase = 'handoff';
+    S.handoffNext  = function() { S.gachaP = 1; S.phase = 'gacha'; };
+  } else {
+    S.setupP       = 0;
+    S.buyType      = null;
+    S.deployGenIdx = null;
+    S.phase        = 'setup';
+  }
+  go();
+}
+
+// ---- SETUP ----
 function setBuyType(type) {
-  S.buyType = (S.buyType === type) ? null : type;
+  S.buyType      = S.buyType === type ? null : type;
+  S.deployGenIdx = null;
+  go();
+}
+
+function setDeployGen(idx) {
+  S.deployGenIdx = S.deployGenIdx === idx ? null : idx;
+  S.buyType      = null;
   go();
 }
 
@@ -756,18 +1053,34 @@ function cellClick(r, c) {
 }
 
 function handleSetupClick(r, c) {
-  if (!S.buyType) return;
   const p = S.setupP;
   if (p === 0 ? c > 2 : c < 7) return;
   if (unitAt(r, c)) return;
-  const d = UDEFS[S.buyType];
-  const count = S.units.filter(u => u.player === p && u.type === S.buyType).length;
-  if (count >= d.lim) return;
-  if (S.gold[p] < d.cost) return;
+  // Mountain blocks cavalry
   if (S.buyType === 'cavalry' && TERRAIN[TMAP[r][c]].noCav) return;
-  S.gold[p] -= d.cost;
-  S.units.push(makeUnit(p, S.buyType, r, c));
-  go();
+
+  if (S.buyType !== null) {
+    const d     = UDEFS[S.buyType];
+    const count = S.units.filter(u => u.player === p && u.type === S.buyType).length;
+    if (count >= d.lim || S.gold[p] < d.cost) return;
+    S.gold[p] -= d.cost;
+    S.units.push(makeUnit(p, S.buyType, r, c));
+    go();
+    return;
+  }
+
+  if (S.deployGenIdx !== null) {
+    const hand = S.gachaHand[p];
+    const g    = hand[S.deployGenIdx];
+    if (!g) return;
+    const deployed = S.units.some(u => u.player === p && u.isGeneral && u.genDef && u.genDef.id === g.id);
+    const genCount = S.units.filter(u => u.player === p && u.isGeneral).length;
+    if (deployed || genCount >= 3 || S.gold[p] < g.deployGold) return;
+    S.gold[p] -= g.deployGold;
+    S.units.push(makeGeneral(p, g, r, c));
+    S.deployGenIdx = null;
+    go();
+  }
 }
 
 function doneSetup() {
@@ -781,7 +1094,7 @@ function doneSetup() {
     S.handoffDesc  = '请将设备交给玩家2进行布置，玩家1请背对屏幕。';
     S.handoffBtn   = '玩家2准备好了 →';
     S.phase = 'handoff';
-    S.handoffNext  = function() { S.setupP = 1; S.buyType = null; S.phase = 'setup'; };
+    S.handoffNext  = function() { S.setupP = 1; S.buyType = null; S.deployGenIdx = null; S.phase = 'setup'; };
   } else {
     S.phase = 'battle';
     S.bTurn = 0;
@@ -790,6 +1103,7 @@ function doneSetup() {
   go();
 }
 
+// ---- BATTLE ----
 function handleBattleClick(r, c) {
   const key = r + ',' + c;
   const occ = unitAt(r, c);
@@ -798,22 +1112,33 @@ function handleBattleClick(r, c) {
     const unit = getUnit(S.selected);
     if (!unit) { clearSel(); go(); return; }
 
-    // 攻击
+    // Trap skill: immobilize target
+    if (S.skillMode && S.skillMode.skillId === 'trap') {
+      if (S.hlAtk.has(key) && occ && occ.player !== unit.player) {
+        S.immobilized.add(occ.id);
+        addLog(unit.name + ' 八卦阵：' + (occ.name || UDEFS[occ.type].n) + ' 下回合被困！');
+        clearSkillMode();
+        clearSel();
+        go();
+        return;
+      }
+      clearSkillMode(); clearSel(); go(); return;
+    }
+
+    // Flank skill or normal attack
     if (S.hlAtk.has(key) && occ && occ.player !== unit.player) {
       doAttack(unit, occ);
-      clearSel();
-      checkWin();
+      clearSkillMode();
+      if (!checkWin()) clearSel();
       go();
       return;
     }
 
-    // 移动
+    // Move
     if (S.hlMv.has(key) && !occ) {
       unit.row = r; unit.col = c;
       S.movedSet.add(unit.id);
-      S.hlMv.clear();
-      S.hlAtk.clear();
-      // 移动后重新计算攻击范围
+      S.hlMv.clear(); S.hlAtk.clear();
       if (!S.atkSet.has(unit.id)) {
         getAtkRange(unit).forEach(k => S.hlAtk.add(k));
       }
@@ -821,28 +1146,28 @@ function handleBattleClick(r, c) {
       return;
     }
 
-    // 切换选中己方单位
+    // Switch to another own unit
     if (occ && occ.player === S.bTurn && occ.alive) {
+      clearSkillMode();
       selectUnit(occ.id);
       return;
     }
 
-    // 取消选中
+    clearSkillMode();
     clearSel(); go();
     return;
   }
 
-  // 选中己方单位
   if (occ && occ.player === S.bTurn && occ.alive) selectUnit(occ.id);
 }
 
 function selectUnit(id) {
   S.selected = id;
-  S.hlMv.clear();
-  S.hlAtk.clear();
+  S.hlMv.clear(); S.hlAtk.clear();
   const u = getUnit(id);
-  if (!S.movedSet.has(id)) getMoveRange(u).forEach(k => S.hlMv.add(k));
-  if (!S.atkSet.has(id))   getAtkRange(u).forEach(k => S.hlAtk.add(k));
+  if (!u) return;
+  if (!S.movedSet.has(id) && !S.immobilized.has(id)) getMoveRange(u).forEach(k => S.hlMv.add(k));
+  if (!S.atkSet.has(id)   && !S.immobilized.has(id)) getAtkRange(u).forEach(k  => S.hlAtk.add(k));
   go();
 }
 
@@ -858,11 +1183,30 @@ function endTurn() {
   let income = 80;
   if (nat.bonus === 'gold') income = Math.floor(income * 1.1);
   S.gold[p] += income;
-  addLog('— P' + (p+1) + '回合结束，+' + income + '金 —');
+  addLog('— P' + (p+1) + ' 回合结束，+' + income + '金 —');
+
+  // Apply immobilized to next turn's movedSet/atkSet
   S.bTurn = 1 - S.bTurn;
   clearSel();
+  clearSkillMode();
   S.movedSet.clear();
   S.atkSet.clear();
+
+  // Immobilized units can't act this turn
+  S.immobilized.forEach(id => {
+    S.movedSet.add(id);
+    S.atkSet.add(id);
+  });
+  S.immobilized.clear();
+
+  // Clear temporary buffs (keep double/triple as they were set before endTurn)
+  for (const id in S.unitBuffs) {
+    const b = S.unitBuffs[id];
+    delete b.atkBonus; delete b.defBonus; delete b.atkDebuff;
+    delete b.immune; delete b.shield; delete b.linePierce;
+    // keep double, triple (they get consumed on attack)
+  }
+
   go();
 }
 
