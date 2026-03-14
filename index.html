@@ -194,6 +194,10 @@ body {
 }
 .buy-btn:hover:not(.disabled) { background: #2a1e10; border-color: #d4a030; }
 .buy-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+.buy-btn.special { border-color: #7a44aa; color: #cc88ff; }
+.buy-btn.special:hover:not(.disabled) { background: #2a1040; border-color: #cc88ff; }
+/* SPECIAL UNIT */
+.u-tok.spec { border-color: #cc44ff !important; border-width: 2px; }
 
 /* BATTLE */
 .s-battle { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1120px; padding: 10px; gap: 8px; }
@@ -323,8 +327,23 @@ const GENERALS = {
   ],
 };
 
-const RARITY_COLORS = ['#aaaaaa','#44aaff','#cc66ff','#ffaa22','#ff4444'];
+const RARITY_COLORS  = ['#aaaaaa','#44aaff','#cc66ff','#ffaa22','#ff4444'];
 const RARITY_WEIGHTS = [55, 25, 12, 6, 2];
+
+// =============================================
+//  SPECIAL UNITS (国家专属特种兵)
+// =============================================
+const SPEC_DEFS = {
+  wei: { id:'wei_spec', n:'虎豹骑', e:'🐅', a:12, d:5, h:10, mv:2, r1:1, r2:1, cost:300, lim:2,
+         nation:'wei', special:'afterAtkMove',
+         sdesc:'攻击后可额外移动1格' },
+  shu: { id:'shu_spec', n:'无当飞军', e:'🦅', a:9,  d:6, h:10, mv:1, r1:1, r2:2, cost:300, lim:2,
+         nation:'shu', special:'forestFighter',
+         sdesc:'树林防御额外+2，攻击忽略地形减益' },
+  wu:  { id:'wu_spec',  n:'丹阳精兵', e:'⚡', a:9,  d:4, h:8,  mv:2, r1:1, r2:1, cost:300, lim:2,
+         nation:'wu',  special:'cityAssault',
+         sdesc:'城池列攻击力+2，可自由穿越城池格' },
+};
 
 // =============================================
 //  STATE
@@ -366,6 +385,7 @@ function newState() {
     log: [],
     winner: null,
     skillMode: null,
+    extraMoveUnit: null,   // Wei 虎豹骑 extra move after attack
     // Handoff
     handoffTitle: '', handoffDesc: '', handoffBtn: '', handoffNext: null,
   };
@@ -390,6 +410,20 @@ function makeUnit(player, type, row, col) {
   if (nat.bonus === 'infantry' && type === 'infantry') { a += 1; def += 1; }
   if (nat.bonus === 'cavalry'  && type === 'cavalry')  { mv += 1; }
   return { id: S.nextId++, player, type, row, col, hp, maxHp: hp, atk: a, def, mv, r1: d.r1, r2: d.r2, alive: true, isGeneral: false };
+}
+
+function makeSpecialUnit(player, row, col) {
+  const natId  = S.nations[player];
+  const sd     = SPEC_DEFS[natId];
+  if (!sd) return null;
+  return {
+    id: S.nextId++, player, type: 'special',
+    row, col, hp: sd.h, maxHp: sd.h,
+    atk: sd.a, def: sd.d, mv: sd.mv,
+    r1: sd.r1, r2: sd.r2,
+    alive: true, isGeneral: false, isSpecial: true, specDef: sd,
+    name: sd.n,
+  };
 }
 
 function makeGeneral(player, genDef, row, col) {
@@ -422,6 +456,8 @@ function getEffectiveAtk(unit) {
   if (buffs.atkDebuff)                                           a = Math.max(1, a - 2);
   if (hasPassive(unit, 'brave') && unit.hp < unit.maxHp * 0.3) a += 3;
   if (hasAllyPassive(unit.player, 'rivalry') && enemy5StarAlive(1 - unit.player)) a = Math.floor(a * 1.2);
+  // 丹阳精兵：城池列攻击+2
+  if (unit.isSpecial && unit.specDef && unit.specDef.special === 'cityAssault' && isCityCol(unit.col)) a += 2;
   return Math.max(1, a);
 }
 
@@ -433,6 +469,11 @@ function getEffectiveDef(unit) {
   // City defense bonus: unit standing on own city column
   const city = getCityAt(unit.col);
   if (city && city.owner === unit.player && city.hp > 0)           d += 4;
+  // 无当飞军：树林额外+2防御
+  if (unit.isSpecial && unit.specDef && unit.specDef.special === 'forestFighter') {
+    const t = TERRAIN[TMAP[unit.row][unit.col]];
+    if (t.cavCost) d += 2; // forest has cavCost
+  }
   return d;
 }
 
@@ -495,14 +536,6 @@ function getAtkRange(unit) {
 // =============================================
 //  COMBAT
 // =============================================
-function calcDamage(att, def) {
-  const t    = TERRAIN[TMAP[def.row][def.col]];
-  const aAtk = getEffectiveAtk(att);
-  let   dDef = getEffectiveDef(def) + t.def;
-  if ((S.unitBuffs[def.id] || {}).shield) dDef += def.def; // guard skill: extra def = half damage approx
-  return Math.max(1, Math.floor(aAtk - dDef * 0.5));
-}
-
 function doAttack(att, def) {
   let dmg = calcDamage(att, def);
 
@@ -542,6 +575,12 @@ function doAttack(att, def) {
   // consume shield
   if ((S.unitBuffs[def.id] || {}).shield) S.unitBuffs[def.id].shield = false;
   S.atkSet.add(att.id);
+  // 虎豹骑：攻击后额外移动1格（标记，等待移动）
+  if (att.isSpecial && att.specDef && att.specDef.special === 'afterAtkMove') {
+    S.extraMoveUnit = att.id;
+    S.movedSet.delete(att.id); // 允许再移动一次
+    addLog('【虎豹骑】攻击后可额外移动1格！');
+  }
 }
 
 function onDeath(unit, killer) {
@@ -571,6 +610,17 @@ function checkWin() {
   return false;
 }
 
+function calcDamage(att, def) {
+  const t    = TERRAIN[TMAP[def.row][def.col]];
+  const aAtk = getEffectiveAtk(att);
+  let   dDef = getEffectiveDef(def);
+  // 无当飞军攻击忽略地形减益（不计地形加成防御）
+  const ignoreTerrain = att.isSpecial && att.specDef && att.specDef.special === 'forestFighter';
+  if (!ignoreTerrain) dDef += t.def;
+  if ((S.unitBuffs[def.id] || {}).shield) dDef += def.def;
+  return Math.max(1, Math.floor(aAtk - dDef * 0.5));
+}
+
 // Attack the city structure (not a unit)
 function doAttackCity(att, city) {
   const eff = getEffectiveAtk(att);
@@ -582,18 +632,31 @@ function doAttackCity(att, city) {
 
 // Buy a reinforcement unit and spawn it in own city column
 function buyReinforcement(type) {
-  const p   = S.bTurn;
-  const d   = UDEFS[type];
-  if (S.gold[p] < d.cost) { addLog('金币不足'); go(); return; }
+  const p       = S.bTurn;
   const backCol = S.cities.find(c => c.owner === p).col;
+  let cost, unitName, makeUnitFn;
+
+  if (type === 'special') {
+    const sd  = SPEC_DEFS[S.nations[p]];
+    const cnt = S.units.filter(u => u.player === p && u.isSpecial).length;
+    if (!sd || cnt >= sd.lim) { addLog('特种兵已达上限'); go(); return; }
+    cost = sd.cost; unitName = sd.n;
+    makeUnitFn = (r, c) => makeSpecialUnit(p, r, c);
+  } else {
+    const d = UDEFS[type];
+    cost = d.cost; unitName = d.n;
+    makeUnitFn = (r, c) => makeUnit(p, type, r, c);
+  }
+
+  if (S.gold[p] < cost) { addLog('金币不足'); go(); return; }
   for (let r = 0; r < ROWS; r++) {
     if (!unitAt(r, backCol)) {
-      S.gold[p] -= d.cost;
-      const u = makeUnit(p, type, r, backCol);
+      S.gold[p] -= cost;
+      const u = makeUnitFn(r, backCol);
       u.hasMoved = true; u.hasAttacked = true;
       S.units.push(u);
       S.movedSet.add(u.id); S.atkSet.add(u.id);
-      addLog('购入' + d.n + '，部署于后排(' + r + ',' + backCol + ')');
+      addLog('购入' + unitName + '，部署于后排');
       go(); return;
     }
   }
@@ -762,22 +825,23 @@ function clearSkillMode() { S.skillMode = null; }
 //  RENDER HELPERS
 // =============================================
 function renderUnitToken(unit) {
-  const d    = unit.isGeneral ? null : UDEFS[unit.type];
   const pct  = unit.hp / unit.maxHp * 100;
   const barC = pct > 60 ? '' : pct > 30 ? ' med' : ' low';
-  const done = S.movedSet.has(unit.id) && S.atkSet.has(unit.id);
+  const done = S.movedSet.has(unit.id) && S.atkSet.has(unit.id) && S.extraMoveUnit !== unit.id;
   const sel  = S.selected === unit.id;
-  const gen  = unit.isGeneral;
-  let inner;
-  if (gen) {
+  let inner, extraCls = '';
+  if (unit.isGeneral) {
     const shortName = unit.name.length > 3 ? unit.name.slice(-2) : unit.name;
-    inner = '<div class="u-gname">' + shortName + '</div>' +
-            '<div class="u-hp">' + unit.hp + '</div>';
+    inner    = '<div class="u-gname">' + shortName + '</div><div class="u-hp">' + unit.hp + '</div>';
+    extraCls = ' gen';
+  } else if (unit.isSpecial) {
+    inner    = '<div class="u-icon">' + unit.specDef.e + '</div><div class="u-hp">' + unit.hp + '</div>';
+    extraCls = ' spec';
   } else {
-    inner = '<div class="u-icon">' + d.e + '</div>' +
-            '<div class="u-hp">' + unit.hp + '</div>';
+    const d  = UDEFS[unit.type];
+    inner    = '<div class="u-icon">' + d.e + '</div><div class="u-hp">' + unit.hp + '</div>';
   }
-  return '<div class="u-tok p' + unit.player + (gen ? ' gen' : '') + (sel ? ' selected' : '') + (done ? ' done' : '') + '">' +
+  return '<div class="u-tok p' + unit.player + extraCls + (sel ? ' selected' : '') + (done ? ' done' : '') + '">' +
     inner +
     '<div class="u-bar"><div class="u-bar-fill' + barC + '" style="width:' + pct + '%"></div></div>' +
     '</div>';
@@ -968,6 +1032,19 @@ function buildSetup() {
       '<div class="gold-num">💰 ' + S.gold[p] + '</div>' +
       '<div class="bonus-txt">' + nat.bdesc + '</div>' +
       '<div class="panel-h">兵种</div>' + btns +
+      (function(){
+        const sd = SPEC_DEFS[S.nations[p]];
+        if (!sd) return '';
+        const cnt = S.units.filter(u => u.player === p && u.isSpecial).length;
+        const can = S.gold[p] >= sd.cost && cnt < sd.lim;
+        const act = S.buyType === 'special';
+        return '<div class="panel-h" style="margin-top:8px;color:#cc88ff">特种兵</div>' +
+          '<div class="utype-btn' + (act?' active':'') + (can?'':' disabled') + '" style="border-color:#7a44aa"' +
+          (can?' onclick="setBuyType(\'special\')"':'') + '>' +
+          sd.e + ' ' + sd.n + ' <span class="utype-cost" style="color:#cc88ff">' + sd.cost + '金</span>' +
+          '<span class="utype-count">' + cnt + '/' + sd.lim + '</span><br>' +
+          '<small style="color:#8a6a9a">' + sd.sdesc + '</small></div>';
+      })() +
       '<div class="panel-h" style="margin-top:8px">武将（手牌）</div>' + genBtns +
       '<br><button class="btn sm" style="width:100%" onclick="doneSetup()">完成布置 →</button>' +
     '</div>' +
@@ -1025,6 +1102,16 @@ function buildBattle() {
   const logHtml = S.log.slice(0, 12).join('<br>');
 
   // Buy reinforcement buttons (current player only)
+  const specDef  = SPEC_DEFS[S.nations[p]];
+  const specCnt  = S.units.filter(u => u.player === p && u.isSpecial).length;
+  const specBtn  = specDef
+    ? (function() {
+        const can = S.gold[p] >= specDef.cost && specCnt < specDef.lim;
+        return '<button class="buy-btn special' + (can ? '' : ' disabled') + '"' +
+          (can ? ' onclick="buyReinforcement(\'special\')"' : '') + '>' +
+          specDef.e + specDef.n + ' ' + specDef.cost + '金</button>';
+      })()
+    : '';
   const buyBtnsHtml = '<div class="buy-reinforce">' +
     '<span style="font-size:11px;color:#7a6040">增援：</span>' +
     Object.keys(UDEFS).map(type => {
@@ -1033,7 +1120,7 @@ function buildBattle() {
       return '<button class="buy-btn' + (can ? '' : ' disabled') + '"' +
         (can ? ' onclick="buyReinforcement(\'' + type + '\')"' : '') + '>' +
         d.e + d.n + ' ' + d.cost + '金</button>';
-    }).join('') +
+    }).join('') + specBtn +
     '</div>';
 
   // City HP display
@@ -1175,6 +1262,14 @@ function handleSetupClick(r, c) {
   if (S.buyType === 'cavalry' && TERRAIN[TMAP[r][c]].noCav) return;
 
   if (S.buyType !== null) {
+    if (S.buyType === 'special') {
+      const sd  = SPEC_DEFS[S.nations[p]];
+      const cnt = S.units.filter(u => u.player === p && u.isSpecial).length;
+      if (!sd || cnt >= sd.lim || S.gold[p] < sd.cost) return;
+      S.gold[p] -= sd.cost;
+      S.units.push(makeSpecialUnit(p, r, c));
+      S.buyType = null; go(); return;
+    }
     const d     = UDEFS[S.buyType];
     const count = S.units.filter(u => u.player === p && u.type === S.buyType).length;
     if (count >= d.lim || S.gold[p] < d.cost) return;
@@ -1271,6 +1366,8 @@ function handleBattleClick(r, c) {
     if (S.hlMv.has(key) && !occ) {
       unit.row = r; unit.col = c;
       S.movedSet.add(unit.id);
+      // 虎豹骑额外移动完成后清除标记
+      if (S.extraMoveUnit === unit.id) S.extraMoveUnit = null;
       S.hlMv.clear(); S.hlAtk.clear();
       if (!S.atkSet.has(unit.id)) {
         getAtkRange(unit).forEach(k => S.hlAtk.add(k));
@@ -1299,8 +1396,9 @@ function selectUnit(id) {
   S.hlMv.clear(); S.hlAtk.clear();
   const u = getUnit(id);
   if (!u) return;
-  if (!S.movedSet.has(id) && !S.immobilized.has(id)) getMoveRange(u).forEach(k => S.hlMv.add(k));
-  if (!S.atkSet.has(id)   && !S.immobilized.has(id)) getAtkRange(u).forEach(k  => S.hlAtk.add(k));
+  const isExtraMove = S.extraMoveUnit === id;
+  if ((!S.movedSet.has(id) || isExtraMove) && !S.immobilized.has(id)) getMoveRange(u).forEach(k => S.hlMv.add(k));
+  if (!S.atkSet.has(id) && !isExtraMove   && !S.immobilized.has(id))  getAtkRange(u).forEach(k  => S.hlAtk.add(k));
   go();
 }
 
@@ -1313,10 +1411,14 @@ function clearSel() {
 function endTurn() {
   const p   = S.bTurn;
   const nat = NATIONS.find(n => n.id === S.nations[p]);
-  let income = 80;
-  if (nat.bonus === 'gold') income = Math.floor(income * 1.1);
-  S.gold[p] += income;
-  addLog('— P' + (p+1) + ' 回合结束，+' + income + '金 —');
+  // 每回合结束：双方各+50金
+  S.gold[0] += 50;
+  S.gold[1] += 50;
+  // 魏国额外+100金（给当前回合是魏国的玩家）
+  let extra = 0;
+  if (nat.bonus === 'gold') { extra = 100; S.gold[p] += extra; }
+  addLog('— P' + (p+1) + ' 回合结束，双方+50金' + (extra ? '，魏国额外+100金' : '') + ' —');
+  S.extraMoveUnit = null;
 
   // Apply immobilized to next turn's movedSet/atkSet
   S.bTurn = 1 - S.bTurn;
