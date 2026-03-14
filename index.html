@@ -274,7 +274,7 @@ const UDEFS = {
 };
 
 const NATIONS = [
-  { id:'wei', n:'魏', icon:'⚔',  col:'#5588cc', bonus:'gold',     bdesc:'每回合收入+10%',  detail:'财力雄厚，金源丰盈' },
+  { id:'wei', n:'魏', icon:'⚔',  col:'#5588cc', bonus:'gold',     bdesc:'每回合收入80金（他方50）',  detail:'财力雄厚，金源丰盈' },
   { id:'shu', n:'蜀', icon:'🌿', col:'#44aa44', bonus:'infantry', bdesc:'步兵+1攻+1防',   detail:'蜀国步卒，坚不可摧' },
   { id:'wu',  n:'吴', icon:'🌊', col:'#cc4444', bonus:'cavalry',  bdesc:'骑兵移动力+1',   detail:'铁骑神速，纵横疆场' },
 ];
@@ -1414,10 +1414,10 @@ function endTurn() {
   // 每回合结束：双方各+50金
   S.gold[0] += 50;
   S.gold[1] += 50;
-  // 魏国额外+100金（给当前回合是魏国的玩家）
+  // 魏国额外+30金（双方50+魏国30=80）
   let extra = 0;
-  if (nat.bonus === 'gold') { extra = 100; S.gold[p] += extra; }
-  addLog('— P' + (p+1) + ' 回合结束，双方+50金' + (extra ? '，魏国额外+100金' : '') + ' —');
+  if (nat.bonus === 'gold') { extra = 30; S.gold[p] += extra; }
+  addLog('— P' + (p+1) + ' 回合结束，双方+50金' + (extra ? '，魏国额外+30金(共80)' : '') + ' —');
   S.extraMoveUnit = null;
 
   // Apply immobilized to next turn's movedSet/atkSet
