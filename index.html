@@ -1184,7 +1184,7 @@ function buildSetup() {
         const act = S.buyType === 'granary';
         return '<div class="panel-h" style="margin-top:8px;color:#88cc44">粮仓建筑</div>' +
           '<div class="utype-btn' + (act?' active':'') + (can?'':' disabled') + '" style="border-color:#4a7a22"' +
-          (can?' onclick="setBuyType('granary')"':'') + '>' +
+          (can?' onclick="setBuyType(\'granary\')"':'') + '>' +
           GRANARY_DEF.e + ' ' + GRANARY_DEF.n + ' <span class="utype-cost" style="color:#88cc44">' + GRANARY_DEF.cost + '金</span>' +
           '<span class="utype-count">' + cnt + '/' + GRANARY_DEF.lim + '</span><br>' +
           '<small style="color:#668844">每回合产 ' + GRANARY_DEF.income + ' 金</small></div>';
