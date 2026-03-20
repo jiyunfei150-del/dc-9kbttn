@@ -332,9 +332,9 @@ const TERRAIN = [
 ];
 
 const UDEFS = {
-  infantry: { n:'步兵', e:'⚔',  a:6,  d:5, h:10, mv:1, r1:1, r2:1, cost:50,  lim:10 },
-  archer:   { n:'弓兵', e:'🏹', a:5,  d:3, h:10, mv:1, r1:1, r2:2, cost:80,  lim:6 },
-  cavalry:  { n:'骑兵', e:'🐎', a:7,  d:5, h:12, mv:2, r1:1, r2:1, cost:120, lim:6 },
+  infantry: { n:'步兵', e:'⚔',  a:6,  d:5, h:10, mv:1, r1:1, r2:1, cost:40,  lim:10 },
+  archer:   { n:'弓兵', e:'🏹', a:5,  d:3, h:10, mv:1, r1:1, r2:2, cost:60,  lim:6 },
+  cavalry:  { n:'骑兵', e:'🐎', a:7,  d:5, h:12, mv:2, r1:1, r2:1, cost:80,  lim:6 },
 };
 
 const NATIONS = [
@@ -398,13 +398,13 @@ const RARITY_WEIGHTS = [55, 25, 12, 6, 2];
 //  SPECIAL UNITS (国家专属特种兵)
 // =============================================
 const SPEC_DEFS = {
-  wei: { id:'wei_spec', n:'虎豹骑', e:'🐅', a:12, d:5, h:10, mv:2, r1:1, r2:1, cost:120, lim:3,
+  wei: { id:'wei_spec', n:'虎豹骑', e:'🐅', a:12, d:5, h:10, mv:2, r1:1, r2:1, cost:100, lim:3,
          nation:'wei', special:'afterAtkMove',
          sdesc:'攻击后可额外移动1格' },
-  shu: { id:'shu_spec', n:'无当飞军', e:'🦅', a:9,  d:6, h:10, mv:1, r1:1, r2:2, cost:120, lim:3,
+  shu: { id:'shu_spec', n:'无当飞军', e:'🦅', a:9,  d:6, h:10, mv:1, r1:1, r2:2, cost:100, lim:3,
          nation:'shu', special:'forestFighter',
          sdesc:'树林防御额外+2，攻击忽略地形减益' },
-  wu:  { id:'wu_spec',  n:'丹阳精兵', e:'⚡', a:9,  d:4, h:8,  mv:2, r1:1, r2:1, cost:120, lim:3,
+  wu:  { id:'wu_spec',  n:'丹阳精兵', e:'⚡', a:9,  d:4, h:8,  mv:2, r1:1, r2:1, cost:100, lim:3,
          nation:'wu',  special:'cityAssault',
          sdesc:'城池列攻击力+2，可自由穿越城池格' },
 };
