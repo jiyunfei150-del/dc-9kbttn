@@ -1155,7 +1155,9 @@ function buildSetup() {
     : '<div style="font-size:11px;color:#5a4a2a">（未抽到武将）</div>';
 
   let hint = '请点击左侧兵种/武将，再点击' + zone + '放置';
-  if (S.buyType)       hint = '已选【' + UDEFS[S.buyType].n + '】→ 点击' + zone + '放置';
+  if (S.buyType && UDEFS[S.buyType]) hint = '已选【' + UDEFS[S.buyType].n + '】→ 点击' + zone + '放置';
+  if (S.buyType === 'special') { const _sd = SPEC_DEFS[S.nations[S.setupP]]; hint = '已选【' + (_sd?_sd.n:'特种兵') + '】→ 点击' + zone + '放置'; }
+  if (S.buyType === 'granary') hint = '已选【🌾粮仓】→ 点击' + zone + '放置';
   if (S.deployGenIdx !== null && hand[S.deployGenIdx]) hint = '已选武将【' + hand[S.deployGenIdx].name + '】→ 点击' + zone + '放置';
 
   return '<div class="s-setup fade-in">' +
