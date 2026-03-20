@@ -806,7 +806,7 @@ function activateSkill(unitId, skillId) {
   switch (skillId) {
     case 'boost': {
       let cnt = 0;
-      const dirs = unit.mv <= 1
+      const dirs = (unit.type === 'infantry' && unit.mv <= 1)
         ? [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
         : [[0,1],[0,-1],[1,0],[-1,0]];
       for (const [dr, dc] of dirs) {
@@ -848,7 +848,7 @@ function activateSkill(unitId, skillId) {
       break;
     case 'guard': {
       let cnt = 0;
-      const dirs = unit.mv <= 1
+      const dirs = (unit.type === 'infantry' && unit.mv <= 1)
         ? [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
         : [[0,1],[0,-1],[1,0],[-1,0]];
       for (const [dr, dc] of dirs) {
