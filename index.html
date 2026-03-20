@@ -806,7 +806,10 @@ function activateSkill(unitId, skillId) {
   switch (skillId) {
     case 'boost': {
       let cnt = 0;
-      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+      const dirs = unit.mv <= 1
+        ? [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
+        : [[0,1],[0,-1],[1,0],[-1,0]];
+      for (const [dr, dc] of dirs) {
         const u = unitAt(unit.row + dr, unit.col + dc);
         if (u && u.alive && u.player === unit.player && u.type === 'infantry') {
           S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
@@ -845,7 +848,10 @@ function activateSkill(unitId, skillId) {
       break;
     case 'guard': {
       let cnt = 0;
-      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+      const dirs = unit.mv <= 1
+        ? [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
+        : [[0,1],[0,-1],[1,0],[-1,0]];
+      for (const [dr, dc] of dirs) {
         const u = unitAt(unit.row + dr, unit.col + dc);
         if (u && u.alive && u.player === unit.player && u.isGeneral) {
           S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
