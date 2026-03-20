@@ -593,9 +593,9 @@ function getMoveRange(unit) {
       if (rem < 0) continue;
       const occ = unitAt(nr, nc);
       if (occ && !(canPierce && occ.player !== unit.player)) continue;
-      // 己方粮仓格不可通行，敌方粮仓格可以站上去
+      // 粮仓格对所有单位都不可通行（必须先攻击摧毁）
       const gran2 = granaryAt(nr, nc);
-      if (gran2 && gran2.player === unit.player) continue;
+      if (gran2) continue;
       const key = nr + ',' + nc;
       if (best.has(key) && best.get(key) >= rem) continue;
       best.set(key, rem);
