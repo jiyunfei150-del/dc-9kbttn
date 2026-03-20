@@ -330,9 +330,9 @@ const TERRAIN = [
 ];
 
 const UDEFS = {
-  infantry: { n:'步兵', e:'⚔',  a:3,  d:6, h:12, mv:1, r1:1, r2:1, cost:50,  lim:6 },
-  archer:   { n:'弓兵', e:'🏹', a:7,  d:3, h:8,  mv:1, r1:1, r2:3, cost:80,  lim:4 },
-  cavalry:  { n:'骑兵', e:'🐎', a:8,  d:4, h:10, mv:2, r1:1, r2:1, cost:120, lim:3 },
+  infantry: { n:'步兵', e:'⚔',  a:6,  d:5, h:10, mv:1, r1:1, r2:1, cost:50,  lim:10 },
+  archer:   { n:'弓兵', e:'🏹', a:5,  d:3, h:10, mv:1, r1:1, r2:2, cost:80,  lim:6 },
+  cavalry:  { n:'骑兵', e:'🐎', a:7,  d:5, h:12, mv:2, r1:1, r2:1, cost:120, lim:6 },
 };
 
 const NATIONS = [
@@ -396,16 +396,37 @@ const RARITY_WEIGHTS = [55, 25, 12, 6, 2];
 //  SPECIAL UNITS (国家专属特种兵)
 // =============================================
 const SPEC_DEFS = {
-  wei: { id:'wei_spec', n:'虎豹骑', e:'🐅', a:12, d:5, h:10, mv:2, r1:1, r2:1, cost:120, lim:2,
+  wei: { id:'wei_spec', n:'虎豹骑', e:'🐅', a:12, d:5, h:10, mv:2, r1:1, r2:1, cost:120, lim:3,
          nation:'wei', special:'afterAtkMove',
          sdesc:'攻击后可额外移动1格' },
-  shu: { id:'shu_spec', n:'无当飞军', e:'🦅', a:9,  d:6, h:10, mv:1, r1:1, r2:2, cost:120, lim:2,
+  shu: { id:'shu_spec', n:'无当飞军', e:'🦅', a:9,  d:6, h:10, mv:1, r1:1, r2:2, cost:120, lim:3,
          nation:'shu', special:'forestFighter',
          sdesc:'树林防御额外+2，攻击忽略地形减益' },
-  wu:  { id:'wu_spec',  n:'丹阳精兵', e:'⚡', a:9,  d:4, h:8,  mv:2, r1:1, r2:1, cost:120, lim:2,
+  wu:  { id:'wu_spec',  n:'丹阳精兵', e:'⚡', a:9,  d:4, h:8,  mv:2, r1:1, r2:1, cost:120, lim:3,
          nation:'wu',  special:'cityAssault',
          sdesc:'城池列攻击力+2，可自由穿越城池格' },
 };
+
+
+// =============================================
+//  GRANARY SYSTEM（粮仓）
+// =============================================
+const GRANARY_DEF = {
+  cost: 300,
+  lim:  5,
+  income: 35,
+  hp: 20,
+  n: '粮仓',
+  e: '🌾',
+};
+
+function makeGranary(player, row, col) {
+  return { id: S.nextId++, player, row, col, hp: GRANARY_DEF.hp, maxHp: GRANARY_DEF.hp, alive: true, isGranary: true };
+}
+
+function granaryAt(r, c) {
+  return (S.granaries || []).find(g => g.alive && g.row === r && g.col === c) || null;
+}
 
 // =============================================
 //  STATE
@@ -416,7 +437,7 @@ function newState() {
   S = {
     phase: 'menu',
     nations: [null, null],
-    gold: [500, 500],
+    gold: [800, 800],
     units: [],
     nextId: 1,
     pickPlayer: 0,
@@ -446,6 +467,8 @@ function newState() {
     immobilized: new Set(),
     log: [],
     winner: null,
+    granaries: [],
+    granaryCount: [0, 0],  // 累计购买数（含已毁）
     skillMode: null,
     extraMoveUnit: null,   // Wei 虎豹骑 extra move after attack
     // AI
@@ -500,7 +523,7 @@ function makeGeneral(player, genDef, row, col) {
   return {
     id: S.nextId++, player, type: 'general',
     row, col, hp: genDef.hp, maxHp: genDef.hp,
-    atk: genDef.atk, def: genDef.def, mv: genDef.mv,
+    atk: genDef.atk, def: genDef.def, mv: Math.max(2, genDef.mv),
     r1: genDef.r1, r2: genDef.r2,
     alive: true, isGeneral: true, genDef,
     name: genDef.name,
@@ -558,7 +581,7 @@ function getMoveRange(unit) {
   const queue = [{ r: unit.row, c: unit.col, mp: unit.mv }];
   while (queue.length) {
     const { r, c, mp } = queue.shift();
-    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const nr = r + dr, nc = c + dc;
       if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
       const t    = TERRAIN[TMAP[nr][nc]];
@@ -568,6 +591,9 @@ function getMoveRange(unit) {
       if (rem < 0) continue;
       const occ = unitAt(nr, nc);
       if (occ && !(canPierce && occ.player !== unit.player)) continue;
+      // 己方粮仓格不可通行，敌方粮仓格可以站上去
+      const gran2 = granaryAt(nr, nc);
+      if (gran2 && gran2.player === unit.player) continue;
       const key = nr + ',' + nc;
       if (best.has(key) && best.get(key) >= rem) continue;
       best.set(key, rem);
@@ -597,6 +623,9 @@ function getAtkRange(unit) {
       } else if (!occ && city && city.owner !== unit.player && city.hp > 0) {
         // Empty enemy city cell — can attack the city structure
         targets.add(r + ',' + c);
+      } else if (!occ && !city) {
+        const g = granaryAt(r, c);
+        if (g && g.player !== unit.player) targets.add(r + ',' + c);
       }
     }
   }
@@ -657,7 +686,7 @@ function onDeath(unit, killer) {
   unit.alive = false;
   // martyr (悍将之魂)
   if (hasPassive(unit, 'martyr')) {
-    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const occ = unitAt(unit.row + dr, unit.col + dc);
       if (occ && occ.player !== unit.player) {
         occ.hp -= 3;
@@ -698,6 +727,20 @@ function doAttackCity(att, city) {
   city.hp   = Math.max(0, city.hp - dmg);
   addLog('P' + (att.player+1) + ' ' + (att.name || UDEFS[att.type].n) + ' → 城池 −' + dmg + ' (剩余' + city.hp + ')');
   S.atkSet.add(att.id);
+}
+
+// Attack granary
+function doAttackGranary(att, gran) {
+  const eff = getEffectiveAtk(att);
+  const dmg = Math.max(1, Math.floor(eff - 2));  // granary has def=2
+  gran.hp   = Math.max(0, gran.hp - dmg);
+  const an  = att.name || (att.isSpecial ? att.specDef.n : UDEFS[att.type].n);
+  addLog('P' + (att.player+1) + ' ' + an + ' → 粮仓 −' + dmg + ' (剩余' + gran.hp + ')');
+  S.atkSet.add(att.id);
+  if (gran.hp <= 0) {
+    gran.alive = false;
+    addLog('💥 粮仓被摧毁！');
+  }
 }
 
 // Buy a reinforcement unit and spawn it in own city column
@@ -759,7 +802,7 @@ function activateSkill(unitId, skillId) {
   switch (skillId) {
     case 'boost': {
       let cnt = 0;
-      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
         const u = unitAt(unit.row + dr, unit.col + dc);
         if (u && u.alive && u.player === unit.player && u.type === 'infantry') {
           S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
@@ -798,7 +841,7 @@ function activateSkill(unitId, skillId) {
       break;
     case 'guard': {
       let cnt = 0;
-      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
         const u = unitAt(unit.row + dr, unit.col + dc);
         if (u && u.alive && u.player === unit.player && u.isGeneral) {
           S.unitBuffs[u.id] = S.unitBuffs[u.id] || {};
@@ -937,8 +980,18 @@ function renderMap(setupMode) {
       if (S.aiAttackCell === key) cls += ' flash-atk';
 
       let inner = '';
+      const gran = granaryAt(r, c);
       if (occ) {
         inner = renderUnitToken(occ);
+      } else if (gran) {
+        const pct = gran.hp / gran.maxHp * 100;
+        const ownColor = gran.player === 0 ? '#6699ff' : '#ff7777';
+        inner = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:54px;height:54px;border-radius:6px;border:2px solid '+ownColor+';background:rgba(0,0,0,0.5)">' +
+          '<span style="font-size:18px">🌾</span>' +
+          '<span style="font-size:8px;color:#88cc44">+' + GRANARY_DEF.income + '</span>' +
+          '<div style="width:38px;height:3px;background:#333;border-radius:2px;margin-top:1px">' +
+          '<div style="height:100%;background:' + (pct>50?'#44ee44':pct>25?'#eeaa00':'#ee2222') + ';border-radius:2px;width:'+pct+'%"></div></div>' +
+          '</div>';
       } else if (city && city.hp > 0) {
         // Show city HP bar and castle icon on empty city cells
         const pct = city.hp / city.maxHp * 100;
@@ -1120,6 +1173,17 @@ function buildSetup() {
           '<small style="color:#8a6a9a">' + sd.sdesc + '</small></div>';
       })() +
       '<div class="panel-h" style="margin-top:8px">武将（手牌）</div>' + genBtns +
+      (function(){
+        const cnt = (S.granaries||[]).filter(g=>g.player===p).length;
+        const can = S.gold[p] >= GRANARY_DEF.cost && cnt < GRANARY_DEF.lim;
+        const act = S.buyType === 'granary';
+        return '<div class="panel-h" style="margin-top:8px;color:#88cc44">粮仓建筑</div>' +
+          '<div class="utype-btn' + (act?' active':'') + (can?'':' disabled') + '" style="border-color:#4a7a22"' +
+          (can?' onclick="setBuyType('granary')"':'') + '>' +
+          GRANARY_DEF.e + ' ' + GRANARY_DEF.n + ' <span class="utype-cost" style="color:#88cc44">' + GRANARY_DEF.cost + '金</span>' +
+          '<span class="utype-count">' + cnt + '/' + GRANARY_DEF.lim + '</span><br>' +
+          '<small style="color:#668844">每回合产 ' + GRANARY_DEF.income + ' 金</small></div>';
+      })() +
       '<br><button class="btn sm" style="width:100%" onclick="doneSetup()">完成布置 →</button>' +
     '</div>' +
     '<div class="setup-main">' +
@@ -1382,7 +1446,16 @@ function handleSetupClick(r, c) {
   if (S.buyType === 'cavalry' && TERRAIN[TMAP[r][c]].noCav) return;
 
   if (S.buyType !== null) {
-    if (S.buyType === 'special') {
+    if (S.buyType === 'granary') {
+    const cnt = (S.granaries || []).filter(g => g.player === p).length;
+    if (cnt >= GRANARY_DEF.lim || S.gold[p] < GRANARY_DEF.cost) return;
+    S.gold[p] -= GRANARY_DEF.cost;
+    if (!S.granaries) S.granaries = [];
+    S.granaries.push(makeGranary(p, r, c));
+    S.buyType = null; go(); return;
+  }
+
+  if (S.buyType === 'special') {
       const sd  = SPEC_DEFS[S.nations[p]];
       const cnt = S.units.filter(u => u.player === p && u.isSpecial).length;
       if (!sd || cnt >= sd.lim || S.gold[p] < sd.cost) return;
@@ -1479,6 +1552,7 @@ function handleBattleClick(r, c) {
       const targetCity = getCityAt(c);
       const enemyUnit  = occ && occ.player !== unit.player ? occ : null;
 
+      const targetGranary = granaryAt(r, c);
       if (enemyUnit) {
         // There is an enemy unit on this cell
         const onCity = targetCity && targetCity.owner !== unit.player && targetCity.hp > 0;
@@ -1493,6 +1567,9 @@ function handleBattleClick(r, c) {
       } else if (targetCity && targetCity.owner !== unit.player && targetCity.hp > 0) {
         // Empty enemy city cell — attack the city structure
         doAttackCity(unit, targetCity);
+      } else if (targetGranary && targetGranary.player !== unit.player) {
+        // Attack enemy granary
+        doAttackGranary(unit, targetGranary);
       }
 
       clearSkillMode();
@@ -1556,6 +1633,13 @@ function endTurn() {
   // 魏国额外+30金（双方50+魏国30=80）
   let extra = 0;
   if (nat.bonus === 'gold') { extra = 30; S.gold[p] += extra; }
+  // 粮仓产金（只给当前回合玩家的粮仓产金）
+  const granaryCount = (S.granaries || []).filter(g => g.alive && g.player === p).length;
+  if (granaryCount > 0) {
+    const granIncome = granaryCount * GRANARY_DEF.income;
+    S.gold[p] += granIncome;
+    addLog('🌾 P' + (p+1) + ' 粮仓×' + granaryCount + ' 产金 +' + granIncome);
+  }
   addLog('— P' + (p+1) + ' 回合结束，双方+50金' + (extra ? '，魏国额外+30金(共80)' : '') + ' —');
   S.extraMoveUnit = null;
 
@@ -1834,7 +1918,7 @@ function aiMaybeBuy() {
   const backCol = S.cities.find(c => c.owner === aiP).col;
   if (S.gold[aiP] < 50) return;
   const myAlive = S.units.filter(u => u.alive && u.player === aiP).length;
-  if (myAlive > 6) return; // don't over-buy
+  if (myAlive > 8) return; // don't over-buy
   const order = ['cavalry','archer','infantry'];
   for (const type of order) {
     const d   = UDEFS[type];
