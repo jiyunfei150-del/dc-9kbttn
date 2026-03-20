@@ -758,7 +758,9 @@ function buyReinforcement(type) {
     cost = sd.cost; unitName = sd.n;
     makeUnitFn = (r, c) => makeSpecialUnit(p, r, c);
   } else {
-    const d = UDEFS[type];
+    const d   = UDEFS[type];
+    const cnt = S.units.filter(u => u.player === p && u.type === type && u.alive).length;
+    if (cnt >= d.lim) { addLog(d.n + '已达上限(' + d.lim + ')'); go(); return; }
     cost = d.cost; unitName = d.n;
     makeUnitFn = (r, c) => makeUnit(p, type, r, c);
   }
